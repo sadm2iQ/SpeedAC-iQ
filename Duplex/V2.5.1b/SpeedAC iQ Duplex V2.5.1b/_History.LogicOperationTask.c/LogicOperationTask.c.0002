@@ -1,0 +1,674 @@
+﻿/*-----------------------------------------------------------------------------
+-- File Name: LogicOperationTask.c 
+--
+-- Copyright 2016 PremierTech as an unpublished work. 
+-- All Rights Reserved.
+--
+-- The information contained herein is confidential property of 
+-- Premier Tech.  The use, copying, transfer or disclosure of such
+-- information is prohibited except by express written agreement with
+-- Premier Tech.
+--
+-- First written on August, 2015 by Steve Santerre.
+--
+-- Module Description:
+-- This file is dedicated to LogicOperationTask function
+------------------------------------------------------------------------------*/
+int scanPLC,scanPLCmem;
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : Status_Refresh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Refresh Different Functions to Updates Values, Flags
+--                      Every Cycle
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : Limit TMAX to avoid scanning to many timers
+--------------------------------------------------------------------------------*/  
+void Status_Refresh(void)
+{
+ int ScreenSaverTimeMem;
+ bool result[3];
+
+
+
+
+ if(T_Dn(T_FirstScan))
+ {
+   if(!FirstScanBT)
+   {
+    result[0] = SetiQFeedAlgorithm (IQ_FEEDING_ALGORITHM_SCALE,1);
+    result[1] = SetiQFeedAlgorithm (IQ_FEEDING_ALGORITHM_SCALE,2);
+    result[2] = iQReadCalFilterSize(SCALE_CHANNEL1, SCALE_NUMBER1,SMFilterSize);
+    FirstScanBT = ON;
+   } 
+
+    
+   LowLevelStatus();
+
+
+   if (IO_Enable[I_HopperEmpty])
+   {
+    if (Input_State(I_HopperEmpty)&&!I_HopperEmptyMem)
+    {
+    I_TglEmptyHopper=ON;
+    I_HopperEmptyMem=ON;
+    }
+    else if (!Input_State(I_HopperEmpty)&&I_HopperEmptyMem)
+     I_HopperEmptyMem=OFF;
+   }
+                                                                        
+   //Hopper State Display
+   if (HopperHMI || I_TglEmptyHopper || (Hopper_State != Hopper_StateMEM && Current_Screen==SCREEN_AUTOMATIC))
+               {
+                     if (HopperHMI|| I_TglEmptyHopper)
+                     {
+                       HopperHMI = OFF;
+                       I_TglEmptyHopper=OFF;
+                     }
+                       
+                     if (SeqModeManager != stp_OFF_MODE && SeqModeManager != stp_STOP_MODE)
+                     { 
+                       if (Hopper_State == HopperFill)  Hopper_State=HopperEmpty;
+                       else if (Hopper_State == HopperEmpty)   Hopper_State=HopperFill;
+                       Hopper_StateMEM = Hopper_State;
+                     }
+
+                     
+                     if(Current_Screen==SCREEN_AUTOMATIC)
+                     {         
+                     HopperStateFlag = Execute;
+                     }     
+
+                     EmptyHopper = (Hopper_State == HopperEmpty);
+                           
+               }
+               
+   //Discharge Pan States Display
+   
+    if(Discharge_State[Scale1] == DischPanOff && Discharge_State[Scale2] == DischPanOff)
+      Discharge_StateImage = DischPanOff;
+    else if(Discharge_State[Scale1] == DischMan && Discharge_State[Scale2] == DischMan)
+      Discharge_StateImage = DischMan;
+   else
+      Discharge_StateImage = DischPan;  
+      
+   if (Discharge_StateImage != Discharge_StateImageMEM && Current_Screen==SCREEN_AUTOMATIC)
+    if(DischargeStateFlag != Execute)
+               {         
+                DischargeStateFlag = Execute;
+               }
+              
+   if(DischargeHMI1 && Discharge_State[Scale1] == DischPanOff) DischargeHMI1 = OFF;
+   if(DischargeHMI2 && Discharge_State[Scale2] == DischPanOff) DischargeHMI2 = OFF;
+
+   //Check All Weight-Release Check Managment
+  if(CheckWeightHMI)
+   {
+   if(CheckWeight_State == ReleaseWeight) CheckWeight_State = CheckAllWeight;
+   else CheckWeight_State = ReleaseWeight;
+   CheckWeightHMI = OFF;
+   }
+   
+   if(CheckWeight_State != CheckAll) CheckAll=CheckWeight_State; 
+
+   //Evaluate Target Weight
+   if(WP.NominalWeight != NominalWeightMem || WP.Overfill1 != OverfillMem1 || WP.Overfill2 != OverfillMem2 )
+   {
+    TargetWeight[Scale1] = WP.NominalWeight + WP.Overfill1;
+    TargetWeight[Scale2] = WP.NominalWeight + WP.Overfill2;
+    NominalWeightMem = WP.NominalWeight;
+    OverfillMem1 = WP.Overfill1;
+    OverfillMem2 = WP.Overfill2;
+    RefreshAutoScreenReq();
+   }
+  
+   //Re-initialize iQFeed Learning
+
+ 
+  if(MinFeedingMem[Scale1] != WP.MinFeeding1) 
+  {
+   MinFeedingMem[Scale1] = WP.MinFeeding1;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart)LearniQSmartParam[Scale1]=ON;
+   if(WP.FeedAlgoType == FeediQFlash)LearniQFlashParam[Scale1]=ON;
+   }
+
+  if(MinFeedingMem[Scale2] != WP.MinFeeding2) 
+  {
+   MinFeedingMem[Scale2] = WP.MinFeeding2;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart)LearniQSmartParam[Scale2]=ON;
+   if(WP.FeedAlgoType == FeediQFlash)LearniQFlashParam[Scale2]=ON;
+  }
+  
+  if(MaxFeedingMem[Scale1] != WP.MaxFeeding1) 
+  {
+   MaxFeedingMem[Scale1] = WP.MaxFeeding1;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart)LearniQSmartParam[Scale1]=ON;
+   if(WP.FeedAlgoType == FeediQFlash)LearniQFlashParam[Scale1]=ON;
+  }
+
+  if(MaxFeedingMem[Scale2] != WP.MaxFeeding2) 
+  {
+   MaxFeedingMem[Scale2] = WP.MaxFeeding2;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart)LearniQSmartParam[Scale2]=ON;
+   if(WP.FeedAlgoType == FeediQFlash)LearniQFlashParam[Scale2]=ON;
+  }
+  
+  if(TargetWeightMem[Scale1] != TargetWeight[Scale1]) 
+  {
+   TargetWeightMem[Scale1] = TargetWeight[Scale1];
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart)LearniQSmartParam[Scale1]=ON; 
+   if(WP.FeedAlgoType == FeediQFlash)LearniQFlashParam[Scale1]=ON;
+  }
+
+  if(TargetWeightMem[Scale2] != TargetWeight[Scale2]) 
+  {
+   TargetWeightMem[Scale2] = TargetWeight[Scale2];
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart)LearniQSmartParam[Scale2]=ON; 
+   if(WP.FeedAlgoType == FeediQFlash)LearniQFlashParam[Scale2]=ON;
+  }
+  
+  if(SlowFilterSizeMem != MP.SlowFilterSize) 
+  {
+  SlowFilterSizeMem = MP.SlowFilterSize;
+  CopyLearnToNovFlag = Execute;
+  if(WP.FeedAlgoType == FeediQSmart){LearniQSmartParam[Scale1]=ON;LearniQSmartParam[Scale2]=ON;}
+  if(WP.FeedAlgoType == FeediQFlash){LearniQFlashParam[Scale1]=ON;LearniQFlashParam[Scale2]=ON;}
+  }
+
+  if(StdFilterSizeMem != MP.StdFilterSize)
+  {
+   StdFilterSizeMem = MP.StdFilterSize;
+  }
+ 
+  if(FastFilterSizeMem != MP.FastFilterSize) 
+  {
+  FastFilterSizeMem = MP.FastFilterSize;
+  CopyLearnToNovFlag = Execute;
+  if(WP.FeedAlgoType == FeediQSmart){LearniQSmartParam[Scale1]=ON;LearniQSmartParam[Scale2]=ON;}
+  }
+
+  if(FlashFilterSizeMem != MP.FlashFilterSize) 
+  {
+   FlashFilterSizeMem = MP.FlashFilterSize;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQFlash){LearniQFlashParam[Scale1]=ON;LearniQFlashParam[Scale2]=ON;}
+  }
+
+  if(iQFlSwitchWeightMem != iQFlSwitchWeight)
+  {
+   iQFlSwitchWeightMem = iQFlSwitchWeight;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQFlash){LearniQFlashParam[Scale1]=ON;LearniQFlashParam[Scale2]=ON;}
+  }
+
+  if(iQFlReduceOutputMem != iQFlReduceOutput)
+  {
+   iQFlReduceOutputMem = iQFlReduceOutput;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQFlash){LearniQFlashParam[Scale1]=ON;LearniQFlashParam[Scale2]=ON;}
+  }
+  
+  if(iQFlControlTimeMem != iQFlControlTime)
+  { 
+   iQFlControlTimeMem = iQFlControlTime;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQFlash){LearniQFlashParam[Scale1]=ON;LearniQFlashParam[Scale2]=ON;}
+  }
+
+  req_slow_fill_time = ((WP.SlowFillFactor + 1) * (step_slow_fill_percentage * MP.SmartStabWindow)); 
+
+  if(req_slow_fill_timeMem != req_slow_fill_time) 
+  {
+   req_slow_fill_timeMem = req_slow_fill_time;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart){LearniQSmartParam[Scale1]=ON;LearniQSmartParam[Scale2]=ON;}
+  }
+ 
+  if(WP.StreamRegConfig != StreamRegConfigMem) 
+  {
+   StreamRegConfigMem = WP.StreamRegConfig;
+   CopyLearnToNovFlag = Execute;
+   if(WP.FeedAlgoType == FeediQSmart){LearniQSmartParam[Scale1]=ON;LearniQSmartParam[Scale2]=ON;}
+  } 
+   
+  if(AutoTuneHMI)
+  {
+   AutoTuneHMI = OFF;
+   if(WP.FeedAlgoType == FeediQSmart){LearniQSmartParam[Scale1]=ON;LearniQSmartParam[Scale2]=ON;}
+   if(WP.FeedAlgoType == FeediQFlash){LearniQFlashParam[Scale1]=ON;LearniQFlashParam[Scale2]=ON;}
+   AutoTune_State = AutoTuneON;
+   AutoTuneStateFlag = Execute;
+  }
+
+
+  if(TD_SetFlag) 
+  {
+   settime(TD_Year,TD_Month,TD_Day,TD_Hour,TD_Minute,0);
+   TD_SetFlag = OFF;
+  } 
+
+   //AutoMode Flag
+  if(SeqModeManager == stp_PREP_MODE || SeqModeManager == stp_AUTO_MODE || SeqModeManager == stp_STOPPING_MODE)
+  {
+   if(!AutoMode) AutoMode = ON;
+  }
+  else
+  {
+   if(AutoMode) AutoMode = OFF;
+  }
+ 
+  if(WP.FeedAlgoType != FeedAlgoTypeMem || FirstScanCheckLearn)
+  {
+   ButtonDisplayRefreshed[SCREEN_GOTO] = OFF;
+   if(WP.FeedAlgoType == FeediQSmart) 
+    {
+    LearniQSmartParam[Scale1] = CheckiQFeedLearn(1);
+    LearniQSmartParam[Scale2] = CheckiQFeedLearn(2);
+    } 
+   if(WP.FeedAlgoType == FeediQFlash) 
+   {
+    LearniQFlashParam[Scale1] = CheckiQFeedLearn(1);
+    LearniQFlashParam[Scale2] = CheckiQFeedLearn(2);
+   } 
+   FeedAlgoTypeMem = WP.FeedAlgoType;
+   CopyLearnToNovFlag = Execute;
+   FirstScanCheckLearn = OFF;
+  }  
+
+ 
+  
+  if (MP.ScreenSaverTime != ScreenSaverTimeMem)
+   {
+   writeparameter ("General","LightOffTime",concat(trim(string(MP.ScreenSaverTime))));
+   ScreenSaverTimeMem = MP.ScreenSaverTime;
+   }
+   
+  
+  if(SaveiQFeedParamFlag[Scale1] != Done)
+   if(SeqModeManager == stp_OFF_MODE || SeqModeManager == stp_STOP_MODE)
+   {
+     if(WP.FeedAlgoType == FeediQSmart)
+     {
+        WP.CPSmFastAvgPoints1 = CPSmFastAvgPointsMem[Scale1];
+        WP.CPSmSlowAvgPoints1 = CPSmSlowAvgPointsMem[Scale1];
+        WP.CPSmSlowItpPoints1 = CPSmSlowItpPointsMem[Scale1];
+        WP.CPSmSwitchTime1    = CPSmSwitchTimeMem[Scale1];
+     }  
+    if(WP.FeedAlgoType == FeediQFlash)
+     {
+        WP.CPFlFastPoints1      = CPFlFastPointsMem[Scale1];
+        WP.CPFlDeviationPoints1 = CPFlDeviationPointsMem[Scale1];
+     }
+   SaveWPFlag = Execute;   
+   SaveiQFeedParamFlag[Scale1] = Done;
+   }
+   
+   if(SaveiQFeedParamFlag[Scale2] != Done)
+   if(SeqModeManager == stp_OFF_MODE || SeqModeManager == stp_STOP_MODE)
+   {
+     if(WP.FeedAlgoType == FeediQSmart)
+     {
+        WP.CPSmFastAvgPoints2 = CPSmFastAvgPointsMem[Scale2];
+        WP.CPSmSlowAvgPoints2 = CPSmSlowAvgPointsMem[Scale2];
+        WP.CPSmSlowItpPoints2 = CPSmSlowItpPointsMem[Scale2];
+        WP.CPSmSwitchTime2    = CPSmSwitchTimeMem[Scale2];
+     }  
+    if(WP.FeedAlgoType == FeediQFlash)
+     {
+        WP.CPFlFastPoints2      = CPFlFastPointsMem[Scale2];
+        WP.CPFlDeviationPoints2 = CPFlDeviationPointsMem[Scale2];
+     }
+   SaveWPFlag = Execute;   
+   SaveiQFeedParamFlag[Scale2] = Done;
+   } 
+    
+  if(MC.AutoSaveCorrection)
+  { 
+   if(CutoffCorrOffset[Scale1] != 0)
+    {
+     WP.Cutoff1 = WP.Cutoff1 - CutoffCorrOffset[Scale1];
+     CutoffCorrOffset[Scale1] = 0;
+     SaveWPFlag = Execute;
+    }
+   if(CutoffCorrOffset[Scale2] != 0)
+    {
+     WP.Cutoff2 = WP.Cutoff2 - CutoffCorrOffset[Scale2];
+     CutoffCorrOffset[Scale2] = 0;
+     SaveWPFlag = Execute;
+    }
+  }  
+
+  if (Reset_FlexIOFlag != Done)
+  {
+    Reset_FlexIO();
+    Reset_FlexIOFlag = Done;
+  }
+
+  if (FlexIO_SetTPresetsFlag != Done)
+  {  
+    FlexIO_SetTPresets();
+    FlexIO_SetTPresetsFlag = Done;
+  }
+
+ 
+  if (ChangeSMStateFlag != Execute && CurrentLevelMem != CurrentLevel)
+   {    
+     ChangeSMStateFlag = Execute;
+   }
+ 
+ 
+  if(MemRecipe != RecipeMem) 
+   {
+    iQDeadTimeRead[Scale1]   = 0;
+    iQDeadTimeRead[Scale2]   = 0;
+    CutoffCorrOffset[Scale1] = 0;
+    CutoffCorrOffset[Scale2] = 0;
+    if(WP.FeedAlgoType == FeediQSmart) 
+     {
+      LearniQSmartParam[Scale1] = CheckiQFeedLearn(1);
+      LearniQSmartParam[Scale2] = CheckiQFeedLearn(2);
+     } 
+    if(WP.FeedAlgoType == FeediQFlash)
+     {
+      LearniQFlashParam[Scale1] = CheckiQFeedLearn(1);
+      LearniQFlashParam[Scale2] = CheckiQFeedLearn(2);
+     } 
+    RecipeMem = MemRecipe;
+    CopyLearnToNovFlag = Execute;
+   }
+ 
+   
+  if(VarInitOffFlag != Done)
+   {
+    VarInitOff();
+    VarInitOffFlag = Done;
+   }
+  
+  if(OutResetFlag != Done)
+   {
+     OutReset();
+     OutResetFlag = Done;
+   }
+  
+  
+
+  
+  if(MC.NumberOfScale != 2) MC.NumberOfScale = 2;
+  
+  if(WP.BulkMode == ByTime && WP.FeedAlgoType == FeedStd) BulkOnTime = ON;
+  else BulkOnTime = OFF;
+
+  if(WP.EnabledScale != EnabledScaleMEM)
+  { 
+   if (WP.EnabledScale == Scale1Only || WP.EnabledScale == Scale1And2) 
+    Scale1ON = ON;
+   else
+    Scale1ON = OFF;
+    
+  if (WP.EnabledScale == Scale2Only || WP.EnabledScale == Scale1And2) 
+    Scale2ON = ON;
+  else
+    Scale2ON = OFF;
+  EnabledScaleMEM = WP.EnabledScale;   
+  }
+    
+  //RefreshGrayoutFlag = ON;
+ }             
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : RegistrationCheck
+--  Created by        : Steve Santerre
+--  Last modified on  : 2016/06
+--  
+--  Purpose           : Registration Key Verification on start-up
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void RegistrationCheck(void)
+{
+int     class, type, value;
+string  args[4][255];
+string  KeyEntering[14];
+bool    RegistrationOK, err;
+  
+  flashload();
+  KeyEntering = "";
+    if(!iQRegistrationKeyCheck(RegistrationKey,RTC_MacAdress))
+      {
+        infobox("");
+        WeightDisplayFull(No_Forcing);
+        SelectAndWaitPage(PAGE_REGISTRATION);
+        widget_text(REGISTRATION_ROW1_INPUT,RTC_MacAdress);
+        
+        do
+        {
+       
+        
+        if (eventreceived())
+          {
+           readevent (class, type, value, args); 
+           if (type !=  EVENT_TYPE_CONNECTION_ESTABLISHED)
+            {  
+                    switch (value)
+                    {
+                      case REGISTRATION_ROW2_INPUT:
+                      KeyEntering = args[0];
+                      break;
+                      
+                      case REGISTRATION_BUTTON_1:
+                      RegistrationOK = iQRegistrationKeyCheck(KeyEntering,RTC_MacAdress);
+                      if(RegistrationOK) 
+                       {
+                         infobox (concat(space(2),"  VALID REGISTRATION KEY  ",space(2)));
+                         delay(5);
+                         infobox ("");
+                         RegistrationKey = KeyEntering;
+                         err = flashsave();
+                       }
+                          
+                      else 
+                       {
+                         infobox (concat(space(2),"  INVALID REGISTRATION KEY  ",space(2)));
+                         delay(5);
+                         infobox ("");
+                         widget_text(REGISTRATION_ROW2_INPUT,"");
+                       }
+                      break;
+                    }
+                   dropevents(); 
+            }
+            else
+             {
+                RefreshRemoteDisplay(WEIGHT_DISPLAY_FULL);
+                widget_text(REGISTRATION_ROW1_INPUT,RTC_MacAdress);
+             }          
+          }
+        delay(0.1);  
+        }  
+        while(!RegistrationOK);  
+        
+        
+      }      
+      else
+      {
+       infobox (concat(space(2),"  VALID REGISTRATION KEY  ",space(2)));
+       delay(10);
+       infobox ("");
+      }
+
+    
+}
+ /*------------------------------------------------------------------------- 
+--  Procedure Name    : HopperRefill
+--  Created by        : Steve Santerre
+--  Last modified on  : 2016/02
+--  
+--  Purpose           : This function is called to Activate/Deactivate
+--                      the hopper refilling output
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+ void HopperRefill(void)
+ {
+ if(IO_Enable[O_HopFillReq])
+  {
+   if(AutoMode && !EmptyHopper && Input_State(I_HighLevelSensor)) //High Level = (0 if Product, 1 if No product)
+     {
+      if(!T_EN[T_RefillingTimeT] && MC.RefillingTimeT > 0) 
+        T_EnOn(T_RefillingTimeT );
+      if(T_Dn(T_RefillingTimeT) || MC.RefillingTimeT <= 0 || !Input_State(I_LowLevelSensor1) || (IO_Enable[I_LowLevelSensor2] && !Input_State(I_LowLevelSensor2))) 
+        Output_ON(O_HopFillReq); //Low Level = (0 if NO Product, 1 if Product)
+     }
+    else
+    {
+     Output_OFF(O_HopFillReq);
+     T_EnOff(T_RefillingTimeT);
+    } 
+  
+  if(!EmptyHopper && IO_Enable[I_HighLevelSensor] && !Input_State(I_HighLevelSensor) 
+     && (!Input_State(I_LowLevelSensor1) || (IO_Enable[I_LowLevelSensor2] && !Input_State(I_LowLevelSensor2))))
+     if(!FaultState(FltS_HopperIllogicalDetection)) FaultHandler(FltS_HopperIllogicalDetection,"");  
+  }
+ }
+ 
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : LogicOperationTask
+--  Created by        : Steve Santerre
+--  Last modified on  : 2016/01
+--  
+--  Purpose           : This function runs indefinitely 
+--                      as a parallel task to the main
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+void LogicOperationTask(void)
+{
+int i,j;
+string time_tempo[6],date_tempo[6];
+
+for(;;)
+ {
+  
+  scanLOTBegin = systemtimer_ms();
+  ScanLOTInterval = scanLOTBegin - scanLOTLast;
+  scanLOTLast = scanLOTBegin;
+  
+  if(!OperationTaskHeartBeat) 
+   {
+    OperationTaskHeartBeat = ON;
+   } 
+  
+  
+  if(!T_EN[T_FirstScan] && !ServiceModeEntered && InitDone) 
+  {
+   T_PRE[T_FirstScan]=5.00;
+   T_EnOn(T_FirstScan);
+  }
+  
+  if(T_Dn(T_FirstScan))
+  {
+   Status_Refresh();
+   if(!IOTestFlag) FaultMonitor();
+   
+   if(Fault_Status_MEM != Fault_Status || Current_Screen!=Current_ScreenMEM2) 
+    {
+     Current_ScreenMEM2 = Current_Screen;
+     FaultLight_Set();
+    }
+   
+   WP_IOs();
+   
+   HopperRefill();
+  
+   if(ResetDataHMI)
+   {
+     ResetData(OFF);
+   }
+   
+   if(ResetBatchHMI)
+   {
+     ResetBatch();
+   } 
+  
+   if(ResetLifetimeDataHMI)
+   {
+     ResetLifetimeData();
+   }  
+  
+   
+   
+   if(RefreshGrayoutFlag)
+   {
+     RefreshGrayout();
+     RefreshGrayoutFlag = OFF;
+   } 
+  
+   if (!TD_SetFlag) 
+    {
+     gettime();
+     time_tempo = "";
+     date_tempo = "";
+     for(i=0;i<=5;i++)
+     {
+      time_tempo = concat(time_tempo,char(date[TIME+i]));
+      date_tempo = concat(date_tempo,char(date[DATE+i]));
+     } 
+      TimeString = concat(left(time_tempo,2),":",sub(time_tempo,2,2),":",right(time_tempo,2));
+      DateNbr = int(date_tempo);
+      DateRefreshed = ON;
+    } 
+   
+   
+   if (FB_Detected)
+   {
+     scanPLCmem = systemtimer_ms();
+     PLC_Communication();
+     scanPLC = systemtimer_ms()- scanPLCmem;
+   }
+
+   
+   if (ProdDataReadyNo != 0)
+     {
+      PrintUnitRecord(ProdDataReadyNo);
+      ProdDataReadyNo = 0;
+     }
+   
+   if(ProdDataReadyPLC)
+    {
+     if(!T_EN[T_ProdDataReady])
+      {
+       T_EnOn(T_ProdDataReady);
+      }
+      
+      if(T_Dn(T_ProdDataReady))
+       {
+        ProdDataReadyPLC = OFF;
+        T_EnOn(T_ProdDataReady);
+       }
+    }   
+        
+   
+  }  
+  scanLOT = systemtimer_ms()- scanLOTBegin;                   
+  delay(0.1);
+ }
+
+}
+ 

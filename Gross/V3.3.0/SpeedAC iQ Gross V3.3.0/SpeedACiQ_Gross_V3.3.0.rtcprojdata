@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<data>
+	<Project>
+		<Files>
+      <File Filename="SpeedacIQ_Main.c" StoreInZIPFile="false"/>
+      <File Filename="IO.c" StoreInZIPFile="true"/>
+      <File Filename="Report.c" StoreInZIPFile="true"/>
+      <File Filename="GoToPage.c" StoreInZIPFile="true"/>
+      <File Filename="MachineParameters.c" StoreInZIPFile="true"/>
+      <File Filename="FlexIOs.c" StoreInZIPFile="false"/>
+      <File Filename="Global_Functions.h" StoreInZIPFile="true"/>
+      <File Filename="Fault.c" StoreInZIPFile="true"/>
+      <File Filename="Images.h" StoreInZIPFile="true"/>
+      <File Filename="PT_Databases.h" StoreInZIPFile="true"/>
+      <File Filename="Enum_List.h" StoreInZIPFile="true"/>
+      <File Filename="RTC_Constants_PTech.h" StoreInZIPFile="false"/>
+      <File Filename="qtmonitor_PTech.h" StoreInZIPFile="false"/>
+      <File Filename="AutoPage.c" StoreInZIPFile="true"/>
+      <File Filename="Access.c" StoreInZIPFile="true"/>
+      <File Filename="MachineConfig.c" StoreInZIPFile="true"/>
+      <File Filename="Recipe.c" StoreInZIPFile="true"/>
+      <File Filename="DisplayHandling.c" StoreInZIPFile="false"/>
+      <File Filename="Language.h" StoreInZIPFile="true"/>
+      <File Filename="Back_Task.c" StoreInZIPFile="true"/>
+      <File Filename="BT_Logic.c" StoreInZIPFile="true"/>
+      <File Filename="BT_Enum_List.h" StoreInZIPFile="true"/>
+      <File Filename="BT_DBases.h" StoreInZIPFile="true"/>
+      <File Filename="iQFeeding.h" StoreInZIPFile="true"/>
+      <File Filename="iQSimulation.h" StoreInZIPFile="false"/>
+      <File Filename="iQSimulation.ccf" StoreInZIPFile="false"/>
+      <File Filename="iQSubFonctions.c" StoreInZIPFile="true"/>
+      <File Filename="LogicOperationTask.c" StoreInZIPFile="false"/>
+      <File Filename="Print_Routines.c" StoreInZIPFile="false"/>
+      <File Filename="iQFeeding.obj" StoreInZIPFile="true"/>
+      <File Filename="GetHardwareInfo.h" StoreInZIPFile="false"/>
+      <File Filename="GetHardwareInfo.obj" StoreInZIPFile="false"/>
+      <File Filename="PLC_Com.c" StoreInZIPFile="false"/>
+      <File Filename="iQHiddenFunctions.obj" StoreInZIPFile="false"/>
+      <File Filename="SpeedACiQ_Gross_V3.3.0.h" StoreInZIPFile="false"/>
+    </Files>
+		<ToDos/>
+	</Project>
+	<simulation>
+    <settings TimePerStep="250" GraphAutostartEnabled="false" GraphTotalTime="1" GraphStartInput="1" GraphStopInput="2"/>
+    <IOData>
+      <Inputs Name="Default" Description="">
+        <Input No="0" Text="Discharge request"/>
+        <Input No="1" Text="Low level sensort"/>
+        <Input No="2" Text="OK to release bag"/>
+        <Input No="3" Text="Empty bag ready"/>
+        <Input No="4" Text="OK for dribble feed"/>
+        <Input No="5" Text=""/>
+        <Input No="6" Text=""/>
+        <Input No="7" Text=""/>
+        <Input No="8" Text=""/>
+        <Input No="9" Text=""/>
+        <Input No="10" Text=""/>
+        <Input No="11" Text=""/>
+        <Input No="12" Text=""/>
+        <Input No="13" Text=""/>
+        <Input No="14" Text=""/>
+        <Input No="15" Text=""/>
+        <Input No="16" Text=""/>
+        <Input No="17" Text=""/>
+        <Input No="18" Text=""/>
+        <Input No="19" Text=""/>
+        <Input No="20" Text=""/>
+        <Input No="21" Text=""/>
+        <Input No="22" Text=""/>
+        <Input No="23" Text=""/>
+        <Input No="24" Text="Input-1"/>
+        <Input No="25" Text="Input-2"/>
+        <Input No="26" Text="Input-3"/>
+        <Input No="27" Text="Input-4"/>
+        <Input No="28" Text="Input-5"/>
+        <Input No="29" Text="Input-6"/>
+        <Input No="30" Text="Input-7"/>
+        <Input No="31" Text="Input-8"/>
+        <Input No="32" Text="Input-1"/>
+        <Input No="33" Text="Input-2"/>
+        <Input No="34" Text="Input-3"/>
+        <Input No="35" Text="Input-4"/>
+        <Input No="36" Text="Input-5"/>
+        <Input No="37" Text="Input-6"/>
+        <Input No="38" Text="Input-7"/>
+        <Input No="39" Text="Input-8"/>
+        <Input No="40" Text="Input-1"/>
+        <Input No="41" Text="Input-2"/>
+        <Input No="42" Text="Input-3"/>
+        <Input No="43" Text="Input-4"/>
+        <Input No="44" Text="Input-5"/>
+        <Input No="45" Text="Input-6"/>
+        <Input No="46" Text="Input-7"/>
+        <Input No="47" Text="Input-8"/>
+        <Input No="48" Text="Input-1"/>
+        <Input No="49" Text="Input-2"/>
+        <Input No="50" Text="Input-3"/>
+        <Input No="51" Text="Input-4"/>
+        <Input No="52" Text="Input-5"/>
+        <Input No="53" Text="Input-6"/>
+        <Input No="54" Text="Input-7"/>
+        <Input No="55" Text="Input-8"/>
+        <Input No="56" Text="Input-1"/>
+        <Input No="57" Text="Input-2"/>
+        <Input No="58" Text="Input-3"/>
+        <Input No="59" Text="Input-4"/>
+        <Input No="60" Text="Input-5"/>
+        <Input No="61" Text="Input-6"/>
+        <Input No="62" Text="Input-7"/>
+        <Input No="63" Text="Input-8"/>
+      </Inputs>
+      <Inputs Name="New group" Description="">
+        <Input No="0" Text=""/>
+        <Input No="1" Text=""/>
+        <Input No="2" Text=""/>
+        <Input No="3" Text=""/>
+        <Input No="4" Text=""/>
+        <Input No="5" Text=""/>
+        <Input No="6" Text=""/>
+        <Input No="7" Text=""/>
+        <Input No="8" Text=""/>
+        <Input No="9" Text=""/>
+        <Input No="10" Text=""/>
+        <Input No="11" Text=""/>
+        <Input No="12" Text=""/>
+        <Input No="13" Text=""/>
+        <Input No="14" Text=""/>
+        <Input No="15" Text=""/>
+        <Input No="16" Text=""/>
+        <Input No="17" Text=""/>
+        <Input No="18" Text=""/>
+        <Input No="19" Text=""/>
+        <Input No="20" Text=""/>
+        <Input No="21" Text=""/>
+        <Input No="22" Text=""/>
+        <Input No="23" Text=""/>
+        <Input No="24" Text=""/>
+        <Input No="25" Text=""/>
+        <Input No="26" Text=""/>
+        <Input No="27" Text=""/>
+        <Input No="28" Text=""/>
+        <Input No="29" Text=""/>
+        <Input No="30" Text=""/>
+        <Input No="31" Text=""/>
+        <Input No="32" Text=""/>
+        <Input No="33" Text=""/>
+        <Input No="34" Text=""/>
+        <Input No="35" Text=""/>
+        <Input No="36" Text=""/>
+        <Input No="37" Text=""/>
+        <Input No="38" Text=""/>
+        <Input No="39" Text=""/>
+        <Input No="40" Text=""/>
+        <Input No="41" Text=""/>
+        <Input No="42" Text=""/>
+        <Input No="43" Text=""/>
+        <Input No="44" Text=""/>
+        <Input No="45" Text=""/>
+        <Input No="46" Text=""/>
+        <Input No="47" Text=""/>
+        <Input No="48" Text=""/>
+        <Input No="49" Text=""/>
+        <Input No="50" Text=""/>
+        <Input No="51" Text=""/>
+        <Input No="52" Text=""/>
+        <Input No="53" Text=""/>
+        <Input No="54" Text=""/>
+        <Input No="55" Text=""/>
+        <Input No="56" Text=""/>
+        <Input No="57" Text=""/>
+        <Input No="58" Text=""/>
+        <Input No="59" Text=""/>
+        <Input No="60" Text=""/>
+        <Input No="61" Text=""/>
+        <Input No="62" Text=""/>
+        <Input No="63" Text=""/>
+      </Inputs>
+      <Outputs Name="Default" Description="">
+        <Output No="0" Text="Catch gate"/>
+        <Output No="1" Text="Bulk feed"/>
+        <Output No="2" Text="Dribble feed"/>
+        <Output No="3" Text="Bag request"/>
+        <Output No="4" Text="Bag release"/>
+        <Output No="5" Text="Ready to release bag"/>
+        <Output No="6" Text="Intermediate feed"/>
+        <Output No="7" Text=""/>
+        <Output No="8" Text=""/>
+        <Output No="9" Text="Bag holder"/>
+        <Output No="10" Text="Locking Device"/>
+        <Output No="11" Text=""/>
+        <Output No="12" Text=""/>
+        <Output No="13" Text=""/>
+        <Output No="14" Text=""/>
+        <Output No="15" Text=""/>
+        <Output No="16" Text="Flex 1"/>
+        <Output No="17" Text="Flex 2"/>
+        <Output No="18" Text="Flex 3"/>
+        <Output No="19" Text=""/>
+        <Output No="20" Text=""/>
+        <Output No="21" Text=""/>
+        <Output No="22" Text=""/>
+        <Output No="23" Text=""/>
+        <Output No="24" Text="Output-1"/>
+        <Output No="25" Text="Output-2"/>
+        <Output No="26" Text="Output-3"/>
+        <Output No="27" Text="Output-4"/>
+        <Output No="28" Text="Output-5"/>
+        <Output No="29" Text="Output-6"/>
+        <Output No="30" Text="Output-7"/>
+        <Output No="31" Text="Output-8"/>
+        <Output No="32" Text="Output-1"/>
+        <Output No="33" Text="Output-2"/>
+        <Output No="34" Text="Output-3"/>
+        <Output No="35" Text="Output-4"/>
+        <Output No="36" Text="Output-5"/>
+        <Output No="37" Text="Output-6"/>
+        <Output No="38" Text="Output-7"/>
+        <Output No="39" Text="Output-8"/>
+        <Output No="40" Text="Output-1"/>
+        <Output No="41" Text="Output-2"/>
+        <Output No="42" Text="Output-3"/>
+        <Output No="43" Text="Output-4"/>
+        <Output No="44" Text="Output-5"/>
+        <Output No="45" Text="Output-6"/>
+        <Output No="46" Text="Output-7"/>
+        <Output No="47" Text="Output-8"/>
+        <Output No="48" Text="Output-1"/>
+        <Output No="49" Text="Output-2"/>
+        <Output No="50" Text="Output-3"/>
+        <Output No="51" Text="Output-4"/>
+        <Output No="52" Text="Output-5"/>
+        <Output No="53" Text="Output-6"/>
+        <Output No="54" Text="Output-7"/>
+        <Output No="55" Text="Output-8"/>
+        <Output No="56" Text="Output-1"/>
+        <Output No="57" Text="Output-2"/>
+        <Output No="58" Text="Output-3"/>
+        <Output No="59" Text="Output-4"/>
+        <Output No="60" Text="Output-5"/>
+        <Output No="61" Text="Output-6"/>
+        <Output No="62" Text="Output-7"/>
+        <Output No="63" Text="Output-8"/>
+      </Outputs>
+      <Outputs Name="New group" Description="">
+        <Output No="0" Text=""/>
+        <Output No="1" Text=""/>
+        <Output No="2" Text=""/>
+        <Output No="3" Text=""/>
+        <Output No="4" Text=""/>
+        <Output No="5" Text=""/>
+        <Output No="6" Text=""/>
+        <Output No="7" Text=""/>
+        <Output No="8" Text=""/>
+        <Output No="9" Text=""/>
+        <Output No="10" Text=""/>
+        <Output No="11" Text=""/>
+        <Output No="12" Text=""/>
+        <Output No="13" Text=""/>
+        <Output No="14" Text=""/>
+        <Output No="15" Text=""/>
+        <Output No="16" Text=""/>
+        <Output No="17" Text=""/>
+        <Output No="18" Text=""/>
+        <Output No="19" Text=""/>
+        <Output No="20" Text=""/>
+        <Output No="21" Text=""/>
+        <Output No="22" Text=""/>
+        <Output No="23" Text=""/>
+        <Output No="24" Text=""/>
+        <Output No="25" Text=""/>
+        <Output No="26" Text=""/>
+        <Output No="27" Text=""/>
+        <Output No="28" Text=""/>
+        <Output No="29" Text=""/>
+        <Output No="30" Text=""/>
+        <Output No="31" Text=""/>
+        <Output No="32" Text=""/>
+        <Output No="33" Text=""/>
+        <Output No="34" Text=""/>
+        <Output No="35" Text=""/>
+        <Output No="36" Text=""/>
+        <Output No="37" Text=""/>
+        <Output No="38" Text=""/>
+        <Output No="39" Text=""/>
+        <Output No="40" Text=""/>
+        <Output No="41" Text=""/>
+        <Output No="42" Text=""/>
+        <Output No="43" Text=""/>
+        <Output No="44" Text=""/>
+        <Output No="45" Text=""/>
+        <Output No="46" Text=""/>
+        <Output No="47" Text=""/>
+        <Output No="48" Text=""/>
+        <Output No="49" Text=""/>
+        <Output No="50" Text=""/>
+        <Output No="51" Text=""/>
+        <Output No="52" Text=""/>
+        <Output No="53" Text=""/>
+        <Output No="54" Text=""/>
+        <Output No="55" Text=""/>
+        <Output No="56" Text=""/>
+        <Output No="57" Text=""/>
+        <Output No="58" Text=""/>
+        <Output No="59" Text=""/>
+        <Output No="60" Text=""/>
+        <Output No="61" Text=""/>
+        <Output No="62" Text=""/>
+        <Output No="63" Text=""/>
+      </Outputs>
+    </IOData>
+    <scales>
+      <scale no="1">
+        <graph/>
+        <flowrates/>
+        <UserScaleWeights>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+        </UserScaleWeights>
+      </scale>
+      <scale no="2">
+        <graph>
+          <point x="0" y="0"/>
+          <point x="0.100000001490116" y="0"/>
+          <point x="0.200000002980232" y="0"/>
+          <point x="0.300000011920929" y="0"/>
+          <point x="0.400000005960464" y="0"/>
+          <point x="0.5" y="0"/>
+          <point x="0.600000023841858" y="0"/>
+          <point x="0.699999988079071" y="0"/>
+          <point x="0.800000011920929" y="0"/>
+          <point x="0.900000035762787" y="0"/>
+          <point x="1" y="0"/>
+        </graph>
+        <flowrates/>
+        <UserScaleWeights>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+          <UserScaleWeight Weight="0"/>
+        </UserScaleWeights>
+      </scale>
+    </scales>
+  </simulation>
+</data>

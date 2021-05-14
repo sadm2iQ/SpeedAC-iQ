@@ -1,0 +1,72 @@
+﻿1	Emergency Stop	I_EStop	0	0		1	
+2	Discharge Request	I_DischReq	9	1		1	
+3	Discharge Door Close|Dis	I_DischDoorClose	0	0		1	
+4	Catch Gate Open|Catch Ga	I_CatchGateOpen	0	0		1	
+5	High Level Sensor	I_HighLevelSensor	0	0		1	
+6	Stop	I_Stop	0	0		1	
+7	Empty Hopper	I_HopperEmpty	0	0		1	
+8	Pressure Switch	I_PressureSW	0	0		1	
+9	Motor Failure	I_MotorFailure	0	0		1	
+10	Low Level Sensor	I_LowLevelSensor	0	1		1	
+11	Start	I_Start	0	0		1	
+12	Manual Discharge	I_ManDisch	0	0		1	
+13	Dribble Feed Only	I_DribbleFeedOnly	0	0		1	
+14	OK For Bulk Feed	I_OK4BulkFeed	0	0		1	
+15	OK For Interm Feed	I_OK4IntermFeed	0	0		1	
+16	OK For Dribble Feed	I_OK4DribbleFeed	0	0		1	
+17	Empty Bag Ready	I_EmptyBagReady	0	0		1	
+18	Clear Faults	I_ClearFaults	0	0		1	
+19	Bag Detected at Kicker	I_BagAtKicker	0	0		1	
+20	Kicker Retracted	I_KickerRetracted	0	0		1	
+21	Test Weights Lowered|Tes	I_LowerTestWeights	0	0		1	
+22	Reset Out of Tol. Alarm	I_ResetOutofTolAlarm	0	0		1	
+23	N/A		0	0		1	
+24	N/A		0	0		1	
+25	Change WP IN1	I_ChangeWPIN1	0	0		1	
+26	Change WP IN2	I_ChangeWPIN2	0	0		1	
+27	Change WP IN3|Change WP 	I_ChangeWPIN3	0	0		1	
+28	Flex Input #1|Flex Input	I_FlexIO_1	0	0		1	
+29	Flex Input #2|Flex Input	I_FlexIO_2	0	0		1	
+30	N/A		0	0		1	
+31	N/A		0	0		1	
+32	N/A		0	0		1	
+33	N/A		0	0		1	
+34	N/A		0	0		1	
+35	N/A		0	0		1	
+36	N/A|N/A|N/A		0	0		1	
+37	Fault|Fault|Fautes	O_Fault	0	0		0	
+38	Catch Gate|Catch Gate|Po	O_CatchGate	0	0		0	
+39	Vibratory Disch. Door	O_VibrDischDoor	0	0		0	
+40	Intermediate Feed	O_IntermFeed	0	0		0	
+41	Discharge|Discharge|Vida	O_Discharge	12	1		0	
+42	Stream Regulator|Stream 	O_StremRegulator	0	0		0	
+43	Discharge Door|Discharge	O_DischDoor	3	1		0	
+44	Bulk Feed|Bulk Feed|Alim	O_BulkFeed	0	0		0	
+45	Dribble Feed|Dribble Fee	O_DribbleFeed	0	1		0	
+46	Hopper Fill Request|Hopp	O_HopFillReq	13	1		0	
+47	Discharge Ready	O_DischReady	0	0		0	
+48	Low Level	O_LowLevel	0	0		0	
+49	Out of Tolerance	O_OutOfTolerance	0	0		0	
+50	Over Weight Alarm	O_OverWeightAlarm	0	0		0	
+51	Under Weight Alarm	O_UnderWeightAlarm	19	1		0	
+52	Cycle In Progress	O_CycleInProgress	0	0		0	
+53	External Bag Counter|Ext	O_ExternalBagCounter	0	0		0	
+54	Cycle In Hold	O_CycleInHold	0	0		0	
+55	Catch Gate Dribble	O_CatchGateDribble	0	0		0	
+56	Bag Holder|Bag Holder|Te	O_BagHolder	0	0		0	
+57	Inflate Bag	O_InflateBag	0	0		0	
+58	Bag Release	O_BagRelease	0	0		0	
+59	Knock Hammer|Knock Hamme	O_KnockHammer	0	0		0	
+60	Activate Kicker	O_ActivateKicker	0	0		0	
+61	Lower Test Weights|Lower	O_LowerTestWeights	0	0		0	
+62	Extend Actuator	O_ExtendActuator	0	0		0	
+63	Retract Actuator	O_RetractActuator	0	0		0	
+64	WP Number OUT1	O_WPNumbOUT1	0	0		0	
+65	WP Number OUT2	O_WPNumbOUT2	0	0		0	
+66	WP Number OUT3	O_WPNumbOUT3	0	0		0	
+67	Closing Conveyor	O_ClosingCnv	0	0		0	
+68	Flex Output #1|Flex Outp	O_FlexIO_1	0	0		0	
+69	Sortie Flex #2	O_FlexIO_2	0	0		0	
+70	N/A		0	0		0	
+71	N/A		0	0		0	
+72	N/A|N/A|N/A		0	0		0	

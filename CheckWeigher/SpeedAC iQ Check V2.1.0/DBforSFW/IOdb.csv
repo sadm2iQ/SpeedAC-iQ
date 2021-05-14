@@ -1,0 +1,48 @@
+﻿1	Photocell at Entry	0	1	1	
+2	Photocell at Exit	1	1	1	
+3	Downstream ready	2	1	1	
+4	Start	0	0	1	
+5	-----	0	0	1	
+6	-----	0	0	1	
+7	Emergency stop	0	0	1	
+8	Motor failure	0	0	1	
+9	Clear faults	0	0	1	
+10	Stop	0	0	1	
+11	-----	0	0	1	
+12	-----	0	0	1	
+13	Change WP IN1	0	0	1	
+14	Change WP IN2	0	0	1	
+15	Change WP IN3	0	0	1	
+16	Change WP IN4	0	0	1	
+17	-----	0	0	1	
+18	-----	0	0	1	
+19	Change WP IN - PWM	0	0	1	
+20	Flex input #1	0	0	1	
+21	Flex input #2	0	0	1	
+22	-----	0	0	1	
+23	-----	0	0	1	
+24	-----	0	0	1	
+25	Start conveyor	0	1	0	
+26	Ready to receive	1	1	0	
+27	Fault	0	0	0	
+28	Zero request	0	0	0	
+29	Reject unit	0	0	0	
+30	Unit checked	0	0	0	
+31	Tolerance Over-reject	0	0	0	
+32	Tolerance Over-accept	0	0	0	
+33	Tolerance Good	0	0	0	
+34	Tolerance Under-accept	0	0	0	
+35	Tolerance Under-reject	0	0	0	
+36	-----	0	0	0	
+37	WP Number OUT1	0	0	0	
+38	WP Number OUT2	0	0	0	
+39	WP Number OUT3	0	0	0	
+40	WP Number OUT4	0	0	0	
+41	-----	0	0	0	
+42	-----	0	0	0	
+43	WP Number OUT - PWM	0	0	0	
+44	Flex output #1	0	0	0	
+45	Flex output #2	0	0	0	
+46	Flex output #3	0	0	0	
+47	-----	0	0	0	
+48	-----	0	0	0	

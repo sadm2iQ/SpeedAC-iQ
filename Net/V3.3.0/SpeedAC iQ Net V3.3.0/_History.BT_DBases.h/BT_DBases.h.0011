@@ -1,0 +1,167 @@
+﻿
+//Database Names
+#define TX_DBWEIGHPROGRAM         "Weigh Program"
+#define TX_DBMACHINECONFIG        "Machine Configuration"
+#define TX_DBMACHINEPARAM         "Machine Parameters"
+
+
+//Weigh Program Data base
+dbase TX_DBWEIGHPROGRAM WPdb[WPdbSIZE]
+{
+      int       No;                    selectmode=input;
+      string    Name[WP_NAME_LENGTH];
+      decimal   NominalWeight%6.2;
+      decimal   Overfill%6.2;          
+      decimal   Cutoff%7.3;
+      decimal   BulkCutoff%6.2;
+      decimal   DFTime%5.2;
+      decimal   CatchGateDelay%5.2;      
+      decimal   UnderWeight%6.2;
+      decimal   OverWeight%6.2;
+      decimal   IntermCutoff%6.2;
+      decimal   DischargeWeight%6.2;
+      decimal   DischargeTime%5.2;
+      decimal   FallingTime%5.2;
+      decimal   MinFeeding%6.2;        //%
+      decimal   MaxFeeding%6.2;        //%
+      decimal   RegMinFeeding%6.2;     //%
+      decimal   RegMaxFeeding%6.2;     //%
+      int       StreamRegConfig;       //enum list Low-High-Auto
+      decimal   ActuatorPos%6.2;     //% 
+      decimal   WeighmentsPerUnit%5.0; 
+      decimal   FeedDelayTime%5.2;
+      bool      VibratoryDischDoors;   //enum list ON-OFF
+      bool      ZeroingOpen;           //enum list Door Open-Door Close
+      int       SlowCycleEnd;          //enum list Dribble Feed-Hold Cycle-Cycle End
+      int       EnabledScale;          //enum list 1Only-2Only-1And2     
+      decimal   TopUpOFFTime%5.2;
+      decimal   TopUpONTime%5.2;
+      decimal   KnockningTime%5.2;
+      decimal   BagInflationTime%5.2;
+      int       FeedAlgoType;          //enum list Standard-iQSMARTFeed-iQFLASHFeed
+      string    Unit[4];                  //enum list kg-lb-oz
+      decimal   FlexSP1%6.2;
+      decimal   FlexSP2%6.2;
+      decimal   FlexT1%5.2;
+      decimal   FlexT2%5.2;
+      bool      CountAll;
+      decimal   ProdUnderWeightCnt%10.0[2];
+      decimal   ProdOverWeightCnt%10.0[2];
+      decimal   ProdTotalUnitsCnt%10.0[2];
+      double    ProdTotalWeight[2];
+      int       SlowFillFactor;
+      string    CPSmFastAvgPoints[2][63];
+      string    CPSmSlowAvgPoints[2][63];
+      string    CPSmSlowItpPoints[8][63];
+      float     CPSmSwitchTime;
+      string    CPFlFastPoints[2][63];
+      string    CPFlDeviationPoints[4][63];
+      decimal   KickerCenterTime%4.2;
+      decimal   KickerActivateTime%4.2;
+      bool      TuneiQFeed;
+      decimal   FlexCounter%6.0;
+      decimal   BFTime%6.3;
+      bool      BulkMode;
+      decimal   VibrationAmplitude%4.2;
+      decimal   VibrationPeriod%4.2;
+      int       DischDoorMode;
+}
+
+/**************************************************************************** 
+  WP Name list
+*****************************************************************************/
+dbase  WPNameList[MAX_WP]
+{
+    int       No;                    selectmode=input;
+    string    Name[WP_NAME_LENGTH];
+    decimal   NominalWeight%6.2;
+    string    Unit[4];
+}
+
+/*********************************************** */
+/*                                               */
+/*  Text definitions moved to Language.h file    */
+/*                                               */
+/* ********************************************* */
+
+
+//Machine Config Data base
+dbase TX_DBMACHINECONFIG MCdb[MAX_MC]
+{
+      int     No;                         selectmode=input;
+      string  Name[24];      
+      decimal BulkBlankT%4.2;
+      decimal DribBlankT%4.2;
+      decimal LowLevelDebounceT%4.2;
+      decimal RefillingTimeT%5.2;        
+      int     NumberOfWP;
+      bool    OIML;                       //enum list yes-no   
+      int     FeederType;                 //enum list all feeders
+      int     NumberOfScale;
+      int     CFGBagHolder;               //enum list NO-S4-Bird Beak
+      int     Language1;                  
+      string  Lang1Text[24];                  
+      int     Language2;                  
+      string  Lang2Text[24];
+      int     Language3;                  
+      string  Lang3Text[24];
+      int     PortCOM2Cfg;    
+      int     PortUSBCfg;
+      bool    AutoSaveCorrection;         //enum list yes-no
+      decimal DischReqDebouncing%4.2;
+      int     PortETHCfg;
+      string  PrinterIP[15];              //IP address of printer xxx.xxx.xxx.xxx
+      bool    DischOnDoorSensor;          //enum list yes-no
+      bool    DribbleOutOnInBulk;         //enum list ON-OFF
+      string  SerialNbr[24];
+      string  PlantLineName[24];
+      string  CustomerName[24];
+      string  CustomerLocation[24];      
+      string  SupportPhoneNbr[24];
+      string  SupportFaxNbr[24];
+      string  SupportEmail[36];  //SADM2
+      string  PartsPhoneNbr[24];
+      string  PartsFaxNbr[24];
+      string  PartsEmail[36]; //SADM2
+      string  iQVersion[30];
+      int     TrialDays;
+      bool    ActuatorPosInvert;
+      decimal ActuatorExtendLimit%2.0;
+      bool    Mouse;  //OFF-ON 
+}
+
+
+
+//Machine Param Data base
+dbase TX_DBMACHINEPARAM MPdb[MAX_MP]
+{
+      int     No;                   selectmode=input;
+      string  Name[24];    
+      int     SampleFreq%7.0;
+      int     SampleSize%7.0;
+      decimal CutoffCorr%6.2;
+      decimal DFWeightCorr%3.1;
+      decimal StabTimeLimit%5.2;
+      decimal SlowCycleTime%5.2;
+      decimal DischDoorMaxTime%5.2;
+      decimal FlexCounter%6.0;
+      decimal CatchGateMaxTime%5.2;
+      decimal OutOfTolTime%7.2;
+      decimal BagDetectionTime%5.2;
+      int     ZeroFreq%7.0;
+      bool    CorrOnAverage;       //enum list yes-no
+      int     CutoffCorrLimit%3.0;
+      decimal ZeroLimit%3.1;      //%
+      bool    AutoZeroOff;           //enum list yes-no
+      int     SlowFilterSize;
+      int     FastFilterSize;
+      decimal FlexSP1%6.2;
+      decimal FlexSP2%6.2;
+      decimal FlexT1%5.2;
+      decimal FlexT2%5.2;
+      int     FlashFilterSize;
+      int     ScreenSaverTime;
+      int     StdFilterSize;
+      decimal SmartStabWindow%3.1;
+}
+

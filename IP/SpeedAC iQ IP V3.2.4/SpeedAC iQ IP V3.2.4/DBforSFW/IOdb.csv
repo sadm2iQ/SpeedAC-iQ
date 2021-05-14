@@ -1,0 +1,72 @@
+﻿1	Emergency stop	0	1	1	
+2	Discharge request	8	1	1	
+3	Discharge door close	10	1	1	
+4	Feed gate close	11	1	1	
+5	High level sensor	0	0	1	
+6	Stop	2	1	1	
+7	Empty hopper	0	0	1	
+8	Pressure switch	0	0	1	
+9	Motor failure	0	0	1	
+10	Low level sensor	4	1	1	
+11	Start	1	1	1	
+12	Manual discharge	0	0	1	
+13	Total Reset	0	0	1	
+14	Clear faults	0	0	1	
+15	Batch end	0	0	1	
+16	Reset out of tol. alarm	0	0	1	
+17	Hold cycle	0	0	1	
+18	Preset feed rate2	0	0	1	
+19	-----	3	1	1	
+20	-----	0	0	1	
+21	-----	7	1	1	
+22	-----	0	0	1	
+23	-----	0	0	1	
+24	-----	0	0	1	
+25	Change WP IN1	0	0	1	
+26	Change WP IN2	0	0	1	
+27	Change WP IN3	0	0	1	
+28	Change WP IN4	0	0	1	
+29	Flex input #1	0	0	1	
+30	Flex input #2	0	0	1	
+31	-----	0	0	1	
+32	-----	0	0	1	
+33	-----	0	0	1	
+34	-----	0	0	1	
+35	-----	0	0	1	
+36	-----	0	0	1	
+37	Fault	1	1	0	
+38	Feed rate low alarm	0	0	0	
+39	Feed rate high alarm	0	0	0	
+40	Vibratory disch. door	0	0	0	
+41	Watch dog	0	0	0	
+42	Discharge	0	0	0	
+43	Discharge door	10	1	0	
+44	Bulk feed	8	1	0	
+45	Dribble feed	9	1	0	
+46	Hopper fill request	0	0	0	
+47	Discharge ready	0	0	0	
+48	Low level	0	0	0	
+49	Out of tolerance	0	0	0	
+50	Overweight alarm	0	0	0	
+51	Underweight alarm	0	0	0	
+52	Cycle in progress	2	1	0	
+53	External disch. counter	0	0	0	
+54	Cycle in hold	0	0	0	
+55	Aspiration	0	0	0	
+56	Clean out weight	3	1	0	
+57	Maintenance cycle	0	0	0	
+58	Pulse total weight	11	1	0	
+59	Slow cycle	0	0	0	
+60	Batch ended	0	1	0	
+61	Flex output #1	0	0	0	
+62	Flex output #2	0	0	0	
+63	Flex output #3	0	0	0	
+64	Agitator	0	0	0	
+65		0	0	0	
+66	-----	0	0	0	
+67	WP Number OUT1	0	0	0	
+68	WP Number OUT2	0	0	0	
+69	WP Number OUT3	0	0	0	
+70	WP Number OUT4	0	0	0	
+71	-----	0	0	0	
+72	-----	0	0	0	

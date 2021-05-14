@@ -1,0 +1,29 @@
+﻿1	Nouzové zastavení	1	1	1
+2	Discharge request	0	1	1
+3	Discharge door close	0	0	1
+4	Catch gate open	0	0	1
+5	Snímač vysoké úrovn�	0	0	1
+6	Stop	0	0	1
+7	Prázdný zásobník	0	0	1
+8	Tlakový spínač	2	1	1
+9	Motor failure	0	0	1
+10	Snímač nízké úrovn�	3	1	1
+11	Spustit	0	0	1
+12	Manual discharge	0	0	1
+13	Dribble feed only	0	0	1
+14	OK for bulk feed	0	0	1
+15	OK for interm. feed	0	0	1
+16	OK for dribble feed	0	0	1
+17	Prázdné pytle připrav	0	0	1
+18	Vymazat poruchy	0	0	1
+19	Detekovaný pytel u ejek	0	0	1
+20	Kicker retracted	0	0	1
+21	Žádost o zkušební hm	0	0	1
+22	Reset out of tol. alarm	0	0	1
+23	-----	0	0	1
+24	-----	0	0	1
+25	Change WP IN1	0	0	1
+26	Change WP IN2	0	0	1
+27	Change WP IN3	0	0	1
+28	Change WP IN4	0	0	1
+29	Flex. vstup #1	13	1	1

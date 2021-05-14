@@ -1,0 +1,42 @@
+[Data]
+MaxRecords=3
+[Field1]
+Name=No
+Datatype=decimal
+Size=2
+Decimals=0
+Text=Nr.|No.|Nr.
+IsArray=0
+MaxArrayElements=1
+[Field2]
+Name=User
+Datatype=string
+Size=24
+Decimals=0
+Text=User name|Utilisateur|User name
+IsArray=0
+MaxArrayElements=1
+[Field3]
+Name=PW
+Datatype=decimal
+Size=7
+Decimals=0
+Text=Password|Mot de passe|Password
+IsArray=0
+MaxArrayElements=1
+[Field4]
+Name=Level
+Datatype=decimal
+Size=1
+Decimals=0
+Text=User level|Niveau d'accès|Nivel de usuario
+IsArray=0
+MaxArrayElements=1
+[Field5]
+Name=Timeout
+Datatype=decimal
+Size=5
+Decimals=0
+Text=Timeout|Délai|Timeout
+IsArray=0
+MaxArrayElements=1

@@ -1,0 +1,4 @@
+"Output No.";"Contact type";"Contact type";"FlexIO-SPSignOn";"FlexIO-SPSignOff";"Weight setpoint";"Weight setpoint";"I/O name";"I/O name";"Timer";"Timer";"Switch state";"Switch state";"I/O valid";"I/O valid";"Count mode";"Preset source";"Initial delay";"On time";"Off time";"FlexIO-IoEnumOn";"FlexIO-IoEnumOff";"FlexIO-IoNameOn";"FlexIO-IoNameOff"
+         1;         1;         1;1;0;         0;         2;         0;         0;         0;         0;0;1;0;0;         0;         0;0.00;0.00;0.00;        65;        65;"Flex output #2";"Flex output #2"
+         2;         0;         0;0;0;         0;         3;         0;         0;         0;         0;0;1;0;0;         0;         0;0.00;0.00;0.00;        29;        29;"Flex input #1";"Flex input #1"
+         3;         1;         0;0;0;         0;         0;         0;         0;         0;         0;0;0;0;0;         1;         0;1.00;0.50;0.25;        66;         0;"Flex output #3";""

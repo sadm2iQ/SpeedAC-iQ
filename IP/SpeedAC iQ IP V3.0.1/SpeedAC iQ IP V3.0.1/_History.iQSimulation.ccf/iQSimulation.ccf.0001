@@ -1,0 +1,115 @@
+﻿#define IQSIM_REPLY_LENGTH    256
+#define IQSIM_REQUEST_LENGTH  1023
+
+#define IQSIMCMD_SET_WEIGHT             "set_weight"
+#define IQSIMCMD_SET_PROGRAM            "set_program"
+#define IQSIMCMD_START_PROGRAM          "start_program"
+#define IQSIMCMD_STOP_PROGRAM           "stop_program"
+
+#define IQSIMKEY_WEIGHT                 "weight"
+#define IQSIMKEY_CODE                   "code"
+
+#define IQSIM_BEGIN_CMD(scl, cmd)       "<SW", trim (scl), ",", cmd, ";"
+#define IQSIM_PARAMETER(key, value)     key, "=", value, ";"
+#define IQSIM_END_CMD                   ">"
+
+
+bool __iQSimExec
+    (int handle,
+    string command)
+{
+  string reply[IQSIM_REPLY_LENGTH];
+
+  if (pwritestring (handle, command, length (command)) == 0)
+    if (preadstring (handle, reply, IQSIM_REPLY_LENGTH, '>', 5.0) == 0)
+      return (sub (reply, 1, 2) == "00");
+
+  return (false);
+}
+
+bool iQSimOpen
+    (int handle,
+    int scaleno,
+    string ip_address)
+{
+  return (popen (handle, concat (ip_address, ":2001")) == 0);
+}
+
+bool iQSimClose
+    (int handle,
+    int scaleno)
+{
+  pclose (handle);
+  return (true);
+}
+
+bool iQSimSetWeight
+    (int handle,
+    int scaleno,
+    float weight)
+{
+  string request[IQSIM_REQUEST_LENGTH];
+
+  request = concat
+  (
+    IQSIM_BEGIN_CMD (scaleno, IQSIMCMD_SET_WEIGHT),
+    IQSIM_PARAMETER (IQSIMKEY_WEIGHT, adj (weight, 10, dp)),
+    IQSIM_END_CMD
+  );
+
+  return (__iQSimExec (handle, request));
+}
+
+string iQSimFormatProgram
+    (string function_of_t,
+    float duration)
+{
+  return (concat (adj (duration, 10, 3), "@", function_of_t));
+}
+
+bool iQSimSetProgram
+    (int handle,
+    int scaleno,
+    string program)
+{
+  string request[IQSIM_REQUEST_LENGTH];
+
+  request = concat
+  (
+    IQSIM_BEGIN_CMD (scaleno, IQSIMCMD_SET_PROGRAM),
+    IQSIM_PARAMETER (IQSIMKEY_CODE, program),
+    IQSIM_END_CMD
+  );
+
+  return (__iQSimExec (handle, request));
+}
+
+bool iQSimStartProgram
+    (int handle,
+    int scaleno)
+{
+  string request[IQSIM_REQUEST_LENGTH];
+
+  request = concat
+  (
+    IQSIM_BEGIN_CMD (scaleno, IQSIMCMD_START_PROGRAM),
+    IQSIM_END_CMD
+  );
+
+  return (__iQSimExec (handle, request));
+}
+
+bool iQSimStopProgram
+    (int handle,
+    int scaleno)
+{
+  string request[IQSIM_REQUEST_LENGTH];
+
+  request = concat
+  (
+    IQSIM_BEGIN_CMD (scaleno, IQSIMCMD_STOP_PROGRAM),
+    IQSIM_END_CMD
+  );
+
+  return (__iQSimExec (handle, request));
+}

@@ -1,0 +1,1040 @@
+﻿/*------------------------------------------------------------------------- 
+--  Procedure Name    : CreateMCPage1
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Creation of Machine Config page #1   
+--                    : 
+--  Value Parameters  :
+--  Variable Params   : none
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void CreateMCPage1(void) 
+{
+  begindraw();
+  createpage(PAGE_MC_1);  
+  page_background (PAGE_MC_1, BackgroundColor);//"white");
+  
+  beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #1
+
+    beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #2    
+   
+      beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #3  
+
+        beginlayout(LAYOUT_TYPE_HBOX, 0); // Header
+          CreatePTLogoHeader();
+          CreateHeader (MC_SEARCH_ID,WD_PAGE_HEADER, HT_PAGE_HEADER, "", align_hcenter, concat (space(1), lsub(TX_MACHINECONFIG_PAGE)), FT_MEDIUM_SIZE, widget_locked);
+
+          beginlayout(LAYOUT_TYPE_HBOX, 0);  //HBOX #5   
+            CreateModeFltDisplay();
+          endlayout();  // End layout of HBOX #5
+         setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "0,1,0,0"); //"left,top,right,bottom"
+        endlayout(); // Header
+
+
+       // Layout of both columns
+        beginlayout(LAYOUT_TYPE_HBOX, 0,3); // HBOX #6
+       
+          //  Layout of first column on the left
+          beginlayout(LAYOUT_TYPE_GRID, 0); // Grid Layout #1
+            beginrow(); // First row with three columns 
+              CreatePromptField (MC_ROW1_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCBULKBLANKTIME), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked );
+              CreateInputField  (MC_ROW1_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 4, 2, OFF, lsub(TX_MCBULKBLANKTIME), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW1_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                              lsub(TX_SEC_UNIT), WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+            
+            beginrow(); // Second row with three columns
+              CreatePromptField (MC_ROW2_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCDRIBBLANKTIME), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField  (MC_ROW2_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 4, 2, OFF, lsub(TX_MCDRIBBLANKTIME), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW2_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                              lsub(TX_SEC_UNIT), WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+            
+            beginrow(); // Thirth row with three columns
+              CreatePromptField (MC_ROW3_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCLOWLEVELDEBOUNCETIME), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField  (MC_ROW3_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 4, 2, OFF, lsub(TX_MCLOWLEVELDEBOUNCETIME), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW3_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                              lsub(TX_SEC_UNIT), WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();   
+                     
+            beginrow(); // Fourth row with three columns
+              CreatePromptField (MC_ROW4_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCREFILLINGTIME), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField  (MC_ROW4_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 5, 2, OFF, lsub(TX_MCREFILLINGTIME), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW4_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                              lsub(TX_SEC_UNIT), WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+
+            beginrow(); // Fifth row with three columns
+              CreatePromptField (MC_ROW5_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCNUMBEROFWP), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField  (MC_ROW5_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_INTEGER, 5, 0, OFF, lsub(TX_MCNUMBEROFWP), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW5_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                              "", WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField   (MC_ROW6_ID,     CL_PT_BLUE, OFF,                    lsub(TX_MCOIML), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW6_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,        lsub(TX_WPNO), lsub(TX_WPYES), "", "", "", WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW6_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                          "" , WD_MC_UNIT, HT_MC_BOX, widget_locked);
+            endrow();
+                   
+          endlayout();  //End of Grid Layout #1
+          
+        // Spacing between columns
+          CreatePromptField (MC_SPACE1,    CL_PT_BLUE, OFF,                       "", FT_STANDARD_SIZE, WD_MC_SPACE, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+        
+        // Layout of second column on the right 
+           
+          beginlayout(LAYOUT_TYPE_GRID, 0,3); // Grid Layout #2 
+            beginrow(); // First row with three columns 
+              CreatePromptField   (MC_ROW7_ID,     CL_PT_BLUE, OFF,                    lsub(TX_MCFEEDERTYPE), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              //CreateComboBoxField (MC_ROW7_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,        TX_DASHES,TX_MCFeederG,TX_MCFeederGHS,TX_MCFeederB,"", WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateComboBoxFeeder (MC_ROW7_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD, WD_MC_BOX, HT_MC_BOX, widget_locked);
+              CreateUnitField     (MC_ROW7_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                          "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow();     
+            
+            beginrow(); // Second row with three columns  
+              CreatePromptField   (MC_ROW8_ID,     CL_PT_BLUE, OFF,                        lsub(TX_MCCFGBAGHOLDER), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW8_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,   lsub(TX_WPNO), lsub(TX_MCHolderS4), lsub(TX_MCHolderBirdBeak), "", "", WD_MC_BOX, HT_MC_BOX, widget_locked);
+              CreateUnitField     (MC_ROW8_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                                                                        "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow();    
+            
+            beginrow(); // Third row with three columns 
+              CreatePromptField   (MC_ROW9_ID,    CL_PT_BLUE, OFF,                            lsub(TX_MCACTUATORPOSINVERT) , FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW9_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,   lsub(TX_WPNO), lsub(TX_WPYES), "", "", "", WD_MC_BOX, HT_MC_BOX, widget_locked);
+              CreateUnitField     (MC_ROW9_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                                                                          "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow();                              
+          
+            beginrow(); // Fourth row with three columns  
+              CreatePromptField (MC_ROW10_ID,    CL_PT_BLUE, OFF,                        lsub(TXMCACTUATORRELATIVELIMIT), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField  (MC_ROW10_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 2, 0, OFF, lsub(TXMCACTUATORRELATIVELIMIT), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW10_UNIT,  FT_RTC_BOLD, FT_SMALL_SIZE,                              lsub(TX_PERC_UNIT), WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();            
+
+            beginrow(); // Fifth row with three columns 
+              CreatePromptField       (MC_ROW11_ID,    CL_PT_BLUE, OFF,                       lsub(TX_MCLANGUAGE2) , FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateLanguageListField (MC_ROW11_SELECT, FT_RTC_BOLD, WIDGET_TEXT_ALIGN_CENTER,                                                          "", WD_MC_BOX, HT_MC_BOX, widget_locked);
+              CreateUnitField         (MC_ROW11_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                                                                     "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow();  
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField       (MC_ROW12_ID,    CL_PT_BLUE, OFF,                       lsub(TX_MCLANGUAGE3) , FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateLanguageListField (MC_ROW12_SELECT, FT_RTC_BOLD, WIDGET_TEXT_ALIGN_CENTER,                                                          "", WD_MC_BOX, HT_MC_BOX, widget_locked); 
+              CreateUnitField         (MC_ROW12_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                                                                     "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow(); 
+                    
+          endlayout(); // End of Grid Layout #2
+          
+       
+        endlayout(); // End of HBOX #6  
+       
+//       createwidget (0, WIDGET_TYPE_STRETCH);  // 
+        
+     endlayout(); // End of VBOX #3 
+
+   
+   endlayout();  // End layout of HBOX #2
+   
+
+
+   createwidget (0, WIDGET_TYPE_STRETCH);
+  
+   CreateNavigButtons (10, NAV_FCT_BUTTON_1, OFF);
+   DrawNavButtons (SCREEN_MC1, ON, BTN_AUTO, BTN_RECIPE, BTN_REPORT, BTN_NAVIG, BTN_ALARM, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NEXT, BTN_NIL_BLUE, BTN_NIL_BLUE);     
+
+  endlayout();  // End of VBOX #1
+  enddraw();
+}
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : CreateMCPage2
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Creation of Machine Parameters page #2   
+--                    : 
+--  Value Parameters  :
+--  Variable Params   : none
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void CreateMCPage2(void) 
+{
+  begindraw();
+  createpage(PAGE_MC_2);  
+  page_background (PAGE_MC_2, BackgroundColor);//"white");
+  
+  beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #1
+
+    beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #2    // Split screen in weighing in-/outputs and sketch field
+   
+      beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #3  // Split left screen in in-/outputs and infoline
+
+       beginlayout(LAYOUT_TYPE_HBOX, 0); // Header
+          CreatePTLogoHeader();
+          CreateHeader (MC_SEARCH_ID,WD_PAGE_HEADER, HT_PAGE_HEADER, "", align_hcenter, concat (space(1), lsub(TX_MACHINECONFIG_PAGE)), FT_MEDIUM_SIZE, widget_locked);
+
+          beginlayout(LAYOUT_TYPE_HBOX, 0);  //HBOX #5   
+            CreateModeFltDisplay();
+          endlayout();  // End layout of HBOX #5
+         setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "0,1,0,0"); //"left,top,right,bottom"
+        endlayout(); // Header
+
+
+       // Left display with weighing in-/outputs without infoline
+        beginlayout(LAYOUT_TYPE_HBOX, 0,3); // HBOX #6
+  
+  
+          //  First column on the left
+          beginlayout(LAYOUT_TYPE_GRID, 0,3); 
+            beginrow(); // First row with three columns 
+              CreatePromptField   (MC_ROW13_ID,    CL_PT_BLUE, OFF,                       lsub(TX_PortCom2), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW13_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,          lsub(TX_MCNone), lsub(TX_FctContinuousOut), lsub(TX_FctUnitRecString),lsub(TX_FctReportToPrinter), "", WD_MC_BOX, HT_MC_BOX, widget_locked ); 
+              CreateUnitField     (MC_ROW13_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                             "", WD_MC_UNIT, HT_MC_BOX, ON );
+            endrow();
+            
+            beginrow(); // Second row with three columns
+              CreatePromptField   (MC_ROW14_ID,    CL_PT_BLUE, OFF,                       lsub(TX_PortUSB), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW14_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,          lsub(TX_MCNone), lsub(TX_FctUnitRecString), lsub(TX_FctUnitRecFile),  lsub(TX_FctReportToPrinter),""/*lsub(TX_FctReportToFile)*/, WD_MC_BOX, HT_MC_BOX, widget_locked ); 
+              CreateUnitField     (MC_ROW14_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                             "", WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+            
+            beginrow(); // Thirth row with three columns
+              CreatePromptField   (MC_ROW15_ID,     CL_PT_BLUE, OFF,                    lsub(TX_MCAUTOSAVECORRECTION), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW15_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,        lsub(TX_WPNO), lsub(TX_WPYES), "", "", "", WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW15_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                          "", WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();   
+                     
+            beginrow(); // Fourth row with three columns
+              CreatePromptField (MC_ROW16_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCDISCHREQDEBOUNCING), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField  (MC_ROW16_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 4, 2, OFF, lsub(TX_MCDISCHREQDEBOUNCING), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField   (MC_ROW16_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                              lsub(TX_SEC_UNIT), WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+    
+            beginrow(); // Fifth row with three columns
+              CreatePromptField   (MC_ROW17_ID,    CL_PT_BLUE, OFF,                       lsub(TX_PortEthernet), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW17_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,          lsub(TX_MCNone), lsub(TX_FctContinuousOut),lsub(TX_FctReportToPrinter),"", "", WD_MC_BOX, HT_MC_BOX, widget_locked ); 
+              CreateUnitField     (MC_ROW17_UNIT,  FT_RTC_BOLD, FT_STANDARD_SIZE,                             "" , WD_MC_UNIT, HT_MC_BOX, widget_locked);
+            endrow();
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField   (MC_ROW18_ID,     CL_PT_BLUE, OFF,                    lsub(TX_PrinterIP), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW18_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_STRING, 15, 0, OFF, lsub(TX_PrinterIP), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW18_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                          "", WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+                   
+          endlayout();  //End of Grid Layout
+          
+        // Spacing between columns
+          CreatePromptField (MC_SPACE1,    CL_PT_BLUE, OFF,                       "", FT_STANDARD_SIZE, WD_MC_SPACE, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+        
+        // Second Column of recipe page  
+           
+          beginlayout(LAYOUT_TYPE_GRID, 0,3); // 
+
+            beginrow(); // First row with three columns 
+              CreatePromptField   (MC_ROW19_ID,     CL_PT_BLUE, OFF,                    lsub(TX_MCDISCHARGEONDOORSENSOR), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW19_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,        lsub(TX_WPNO), lsub(TX_WPYES), "", "", "", WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW19_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                          "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow();     
+            
+            beginrow(); // Second row with three columns  
+              CreatePromptField   (MC_ROW20_ID,     CL_PT_BLUE, OFF,                    lsub(TX_MCDRIBBLEOUTONINBULK), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateComboBoxField (MC_ROW20_SELECT, FT_STANDARD_SIZE, FT_RTC_BOLD,        lsub(TX_OFF), lsub(TX_ON), "", "", "", WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW20_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                          "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow();    
+            
+            beginrow(); // Third row with three columns 
+              CreatePromptField   (MC_ROW21_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPLANTLINENAME), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW21_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_STRING, 24, 0, OFF, lsub(TX_MCPLANTLINENAME), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW21_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked); 
+            endrow();                              
+          
+            beginrow(); // Fourth row with three columns  
+              CreatePromptField   (MC_ROW22_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCSERIALNBR), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW22_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_STRING, 12, 0, OFF, lsub(TX_MCSERIALNBR), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW22_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked); 
+            endrow();            
+
+            beginrow(); // Fifth row with three columns 
+              CreatePromptField   (MC_ROW23_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCCUSTOMERNAME), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW23_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_STRING, 24, 0, OFF, lsub(TX_MCCUSTOMERNAME), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW23_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                           "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);      
+            endrow();  
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField   (MC_ROW24_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCCUSTOMERLOCATION), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW24_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_STRING, 24, 0, OFF, lsub(TX_MCCUSTOMERLOCATION), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW24_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow(); 
+                  
+          endlayout(); // End of Grid Layout
+ 
+//        createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);  // Set max distance between entries and infoline          
+       
+        endlayout(); // End of HBOX #6  // End of left display in-/outputs without infoline HBOX
+       
+       createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);  // Set max distance between entries and infoline
+        
+     endlayout(); // End of VBOX #3 // End of left screen VBOX
+
+   
+   endlayout();  // End layout of HBOX #2
+   
+
+
+   createwidget (0, WIDGET_TYPE_STRETCH);
+  
+   CreateNavigButtons (10, NAV_FCT_BUTTON_1, OFF);
+  DrawNavButtons (SCREEN_MC2, ON, BTN_AUTO, BTN_RECIPE, BTN_REPORT, BTN_NAVIG, BTN_ALARM, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NEXT, BTN_NIL_BLUE, BTN_NIL_BLUE);     
+
+  endlayout();  // End of VBOX #1
+  enddraw();
+}
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : CreateMCPage3
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Creation of Machine Config page #3   
+--                    : 
+--  Value Parameters  :
+--  Variable Params   : none
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+
+void CreateMCPage3(void) 
+{
+  begindraw();
+  createpage(PAGE_MC_3);  
+  page_background (PAGE_MC_3, BackgroundColor);//"white");
+  
+  beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #1
+
+    beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #2    // Split screen in weighing in-/outputs and sketch field
+   
+      beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #3  // Split left screen in in-/outputs and infoline
+
+       beginlayout(LAYOUT_TYPE_HBOX, 0); // Header
+          CreatePTLogoHeader();
+          CreateHeader (MC_SEARCH_ID,WD_PAGE_HEADER, HT_PAGE_HEADER, "", align_hcenter, concat (space(1), lsub(TX_MACHINECONFIG_PAGE)), FT_MEDIUM_SIZE, widget_locked);
+
+          beginlayout(LAYOUT_TYPE_HBOX, 0);  //HBOX #5   
+            CreateModeFltDisplay();
+          endlayout();  // End layout of HBOX #5
+         setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "0,1,0,0"); //"left,top,right,bottom"
+        endlayout(); // Header
+
+
+       // Left display with weighing in-/outputs without infoline
+        beginlayout(LAYOUT_TYPE_HBOX, 0,3); // HBOX #6
+       
+          //  First column on the left
+          beginlayout(LAYOUT_TYPE_GRID, 0,3); 
+            beginrow(); // First row with three columns 
+              CreatePromptField   (MC_ROW25_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPASSWORDOP), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW25_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 8, 0, OFF, lsub(TX_MCPASSWORDOP), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW25_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT, HT_MC_BOX, widget_locked );  
+            endrow();
+
+            beginrow(); // Second row with three columns
+              CreatePromptField   (MC_ROW26_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPASSWORDSUP), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW26_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 8, 0, OFF, lsub(TX_MCPASSWORDSUP), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW26_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT, HT_MC_BOX, widget_locked );              
+            endrow();
+
+            beginrow(); // Third row with three columns
+              CreatePromptField   (MC_ROW27_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPASSWORDPT), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW27_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 8, 0, OFF, lsub(TX_MCPASSWORDPT), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW27_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "" , WD_MC_UNIT, HT_MC_BOX, widget_locked);       
+            endrow();   
+                     
+            beginrow(); // Fourth row with three columns
+              CreatePromptField   (MC_ROW28_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCSUPPORTPHONENBR), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW28_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_NUMERIC_STRING, 24, 0, OFF, lsub(TX_MCSUPPORTPHONENBR), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW28_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+
+            beginrow(); // Fifth row with three columns
+              CreatePromptField   (MC_ROW29_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCSUPPORTEMAIL), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW29_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_NUMERIC_STRING, 24, 0, OFF, lsub(TX_MCSUPPORTEMAIL), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW29_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT, HT_MC_BOX, widget_locked );
+            endrow();
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField   (MC_ROW30_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCTRIALDAYS), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, Left_Margin, widget_locked);
+              CreateInputField    (MC_ROW30_INPUT, FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 3, 0, OFF, lsub(TX_MCTRIALDAYS), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW30_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT, HT_MC_BOX, widget_locked ); 
+            endrow();
+                   
+          endlayout();  //End of Grid Layout
+          
+        // Spacing between columns
+          CreatePromptField (MC_SPACE1,    CL_PT_BLUE, OFF,                       "", FT_STANDARD_SIZE, WD_MC_SPACE, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+        
+        // Second Column of recipe page  
+           
+          beginlayout(LAYOUT_TYPE_GRID, 0,3); // 
+            beginrow(); // First row with three columns 
+              CreatePromptField   (MC_ROW31_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCLOGOUTDELAYOP), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW31_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 7, 2, OFF, lsub(TX_MCLOGOUTDELAYOP), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW31_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            lsub(TX_MINUTE_UNIT), WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow();     
+            
+            beginrow(); // Second row with three columns  
+              CreatePromptField   (MC_ROW32_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCLOGOUTDELAYSUP), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW32_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 7, 2, OFF, lsub(TX_MCLOGOUTDELAYSUP), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW32_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            lsub(TX_MINUTE_UNIT), WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow();    
+            
+            beginrow(); // Third row with three columns 
+              CreatePromptField   (MC_ROW33_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCLOGOUTDELAYPT), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW33_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_DECIMAL, 7, 2, OFF, lsub(TX_MCLOGOUTDELAYPT), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW33_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            lsub(TX_MINUTE_UNIT), WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow();                              
+          
+            beginrow(); // Fourth row with three columns  
+              CreatePromptField   (MC_ROW34_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPARTSPHONENBR), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW34_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_NUMERIC_STRING, 24, 0, OFF, lsub(TX_MCPARTSPHONENBR), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW34_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow();            
+
+            beginrow(); // Fifth row with three columns 
+              CreatePromptField   (MC_ROW35_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPARTSFAXNBR), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW35_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_NUMERIC_STRING, 24, 0, OFF, lsub(TX_MCPARTSFAXNBR), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW35_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "", WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked );
+            endrow();  
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField   (MC_ROW36_ID,     CL_PT_BLUE, OFF,                      lsub(TX_MCPARTSEMAIL), FT_STANDARD_SIZE, WD_MC_DESCRIPTION, HT_MC_DESCRIPTION, No_Margin, widget_locked);
+              CreateInputField    (MC_ROW36_INPUT,  FT_STANDARD_SIZE, FT_RTC_BOLD, INPUT_FORMAT_STRING, 24, 0, OFF, lsub(TX_MCPARTSEMAIL), WD_MC_BOX, HT_MC_BOX, widget_locked );
+              CreateUnitField     (MC_ROW36_UNIT,   FT_RTC_BOLD, FT_STANDARD_SIZE,                            "" , WD_MC_UNIT_LEFT, HT_MC_BOX, widget_locked);
+            endrow(); 
+                   
+          endlayout(); // End of Grid Layout
+          
+       
+
+        
+        endlayout(); // End of HBOX #6  // End of left display in-/outputs without infoline HBOX
+       
+       createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);  // Set max distance between entries and infoline
+        
+     endlayout(); // End of VBOX #3 // End of left screen VBOX
+
+   
+   endlayout();  // End layout of HBOX #2
+   
+
+
+   createwidget (0, WIDGET_TYPE_STRETCH);
+  
+   CreateNavigButtons (10, NAV_FCT_BUTTON_1, OFF);
+   DrawNavButtons (SCREEN_MC3, ON, BTN_AUTO, BTN_RECIPE, BTN_REPORT, BTN_NAVIG, BTN_ALARM, BTN_NIL_BLUE, BTN_PREV, BTN_NEXT, BTN_NIL_BLUE, BTN_NIL_BLUE);     
+
+  endlayout();  // End of VBOX #1
+  enddraw();
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : CreateMCPage4
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Creation of Machine Config page #4   Save to default
+--                    : 
+--  Value Parameters  :
+--  Variable Params   : none
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void CreateMCPage4(void) 
+{
+  begindraw();
+  createpage(PAGE_MC_4);  
+  page_background (PAGE_MC_4, BackgroundColor);//"white");
+  
+  beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #1
+
+    beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #2    // Split screen in weighing in-/outputs and sketch field
+   
+      beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #3  // Split left screen in in-/outputs and infoline
+
+       beginlayout(LAYOUT_TYPE_HBOX, 0); // Header
+          CreatePTLogoHeader();
+          CreateHeader (MC_SEARCH_ID,WD_PAGE_HEADER, HT_PAGE_HEADER, "", align_hcenter, concat (space(1), lsub(TX_MACHINECONFIG_PAGE)), FT_MEDIUM_SIZE, widget_locked);
+
+          beginlayout(LAYOUT_TYPE_HBOX, 0);  //HBOX #5   
+            CreateModeFltDisplay();
+          endlayout();  // End layout of HBOX #5
+         setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "0,1,0,0"); //"left,top,right,bottom"
+        endlayout(); // Header
+
+
+       // Left display with weighing in-/outputs without infoline
+        beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #6
+       
+          //  First column on the left
+         createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);
+          beginlayout(LAYOUT_TYPE_GRID, 0); 
+            beginrow(); // First row (Operator) with three columns 
+              CreatePromptField     (MC_ROW37_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, Left_Margin, widget_locked);
+            endrow();
+            beginrow(); // Second row (Operator) with three columns  
+              CreatePromptField     (MC_ROW38_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, HT_MP_BOX, Left_Margin, widget_locked);
+            endrow();
+            beginrow(); // Third row (Operator) with three columns
+              createwidget (MC_SAVE2DEFAULT, WIDGET_TYPE_TEXT_OUTPUT);
+              widget_text_alignment (MC_SAVE2DEFAULT,  WIDGET_TEXT_ALIGN_CENTER); 
+            endrow(); 
+            beginrow(); // Fourth row (Operator) with three columns 
+              CreatePromptField   (MC_ROW39_ID,     CL_PT_BLUE, OFF,                      lsub(TX_SaveMC2Def), FT_STANDARD_SIZE, WD_MC_PAGE4, HT_MP_BOX, Left_Margin, widget_locked);
+              widget_text_alignment (MC_ROW39_ID,  WIDGET_TEXT_ALIGN_CENTER); 
+            endrow();           
+            beginrow(); // Fifth row (Operator) with three columns  
+              CreatePromptField     (MC_ROW40_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, Left_Margin, widget_locked);
+            endrow();
+            beginrow(); // Sixth row (Operator) with three columns  
+              CreatePromptField     (MC_ROW41_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, Left_Margin, widget_locked);
+            endrow();
+            beginrow(); // Seventh row (Operator) with three columns  
+             CreatePromptField     (MC_ROW42_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, Left_Margin, widget_locked);
+            endrow();
+                               
+          endlayout();  //End of Grid Layout
+          
+        // Second Column of recipe page  
+         createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH); 
+          beginlayout(LAYOUT_TYPE_GRID, 0); // 
+            beginrow(); // First row with three columns 
+              CreatePromptField     (MC_ROW43_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, No_Margin, widget_locked);
+            endrow();
+            beginrow(); // Second row with three columns 
+              CreatePromptField     (MC_ROW44_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, HT_MP_BOX, No_Margin, widget_locked);
+            endrow();
+            beginrow(); // Third row with three columns 
+              createwidget (MC_RESTOREDEFAULT, WIDGET_TYPE_TEXT_OUTPUT);
+              widget_text_alignment (MC_RESTOREDEFAULT,  WIDGET_TEXT_ALIGN_CENTER);
+            endrow();
+            beginrow(); // Fourth row with three columns 
+              CreatePromptField   (MC_ROW45_ID,     CL_PT_BLUE, OFF,                      lsub(TX_RestDef2MC), FT_STANDARD_SIZE, WD_MC_PAGE4, HT_MP_BOX, No_Margin, widget_locked);
+              widget_text_alignment (MC_ROW45_ID,  WIDGET_TEXT_ALIGN_CENTER);
+            endrow();
+            beginrow(); // Fifth row with three columns 
+              CreatePromptField     (MC_ROW46_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, No_Margin, widget_locked);
+            endrow();
+            beginrow(); // Sixth row with three columns 
+              CreatePromptField     (MC_ROW47_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, No_Margin, widget_locked);
+            endrow();
+            beginrow(); // Seventh row with three columns 
+              CreatePromptField     (MC_ROW48_ID,     CL_PT_BLUE, OFF,                  "", FT_STANDARD_SIZE, WD_MC_PAGE4, 20, No_Margin, widget_locked);
+            endrow();     
+               
+          endlayout(); // End of Grid Layout
+
+        createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);  // Set max distance between entries and infoline
+        
+        endlayout(); // End of HBOX #6  // End of left display in-/outputs without infoline HBOX
+
+
+       
+       createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);  // Set max distance between entries and infoline
+        
+     endlayout(); // End of VBOX #3 // End of left screen VBOX
+
+   
+   endlayout();  // End layout of HBOX #2
+   
+
+
+   createwidget (0, WIDGET_TYPE_STRETCH);
+  
+   CreateNavigButtons (10, NAV_FCT_BUTTON_1, OFF);
+   DrawNavButtons (SCREEN_MC4, ON, BTN_AUTO, BTN_RECIPE, BTN_REPORT, BTN_NAVIG, BTN_ALARM, BTN_NIL_BLUE, BTN_PREV, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE);     
+
+  endlayout();  // End of VBOX #1
+  enddraw();
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : CreateLanguageListPage
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2016/05
+--  
+--  Purpose           : Language selection database creation 
+--                    : 
+--  Value Parameters  :
+--  Variable Params   : none
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void CreateLanguageListPage(void) 
+{
+  begindraw();
+    createpage(PAGE_LANGUAGE_DBASE_LIST);  
+    beginlayout(LAYOUT_TYPE_VBOX, 0);  
+          
+      createwidget (ID_HEADLINE, WIDGET_TYPE_TEXT_OUTPUT);
+        widget_background     (ID_HEADLINE,   CL_PT_GRAY );
+        widget_foreground     (ID_HEADLINE,   CL_PT_WHITE);
+        widget_fontsize       (ID_HEADLINE,   FT_RECIPE_SIZE);
+        widget_size_policy    (ID_HEADLINE,   SIZE_POLICY_MINIMUMEXPANDING, SIZE_POLICY_MINIMUM);
+        widget_text_alignment (ID_HEADLINE,   WIDGET_TEXT_ALIGN_LEFT );
+        widget_text           (ID_HEADLINE,   concat(space(1), lsub(TX_LANGUAGE_ID), space(5), lsub(TX_PRESSHERE)) );
+
+      createwidget (ID_LANGUAGE_DBASE_LIST, WIDGET_TYPE_LIST);
+        widget_fontsize    (ID_LANGUAGE_DBASE_LIST, FT_RECIPE_SIZE);  
+        
+    endlayout(); 
+  enddraw();
+}
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : LoadAccessTableDB
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/29
+--  
+--  Purpose           : Load Access table from DBase used for correspondance
+--                      with the MC Username and Password
+--  Value Parameters  :
+--  Variable Params   : none 
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void LoadAccessTableDB (void)
+{
+bool   err;
+       
+ if (Access_PW[0] < 1 || Access_PW[0] > 99999) err = flashload();
+ if (Access_PW[2] != 10090) Access_PW[2] = 10090;
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : WriteAccessTableDB
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/29
+--  
+--  Purpose           : Write into the entire database used for correspondance
+--                      with the MC Username and Password 
+--  Value Parameters  :
+--  Variable Params   : none  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void WriteAccessTableDB (void)           
+{
+bool   err;
+    
+    err = flashsave();
+    LoadAccessTableDB ();
+} 
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : MCFillDb_Init
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2016/11
+--  
+--  Purpose           : Fill MC Database at startup to avoid empty Db
+--                      
+--  Value Parameters  :
+--  Variable Params   : none 
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void MCFillDb_Init (void)
+{
+int   i, err, MaxArrayMCTemp;
+
+   MaxArrayMCTemp= records(MCdb);
+
+// Fill MC missing Tables
+   for (i=(MaxArrayMCTemp+1); i<=MAX_MC; i++)
+   {
+      DbDamaged.MCs = ON;
+      MCdb.No = i;
+      if (i==1) MCdb.Name = "Active";  
+      else MCdb.Name = "Default";
+      MCdb.NumberOfWP = 10;       
+      MCdb.Language1 = 1;
+      MCdb.Lang1Text = "English";
+      MCdb.Language2 = 0;
+      MCdb.Lang2Text = TX_DASHES;
+      MCdb.Language3 = 0;
+      MCdb.Lang3Text = TX_DASHES;
+      MCdb.PrinterIP = "0.0.0.0";
+      MCdb.SerialNbr = TX_DASHES;
+      MCdb.PlantLineName = TX_DASHES;
+      MCdb.CustomerName = TX_DASHES;
+      MCdb.CustomerLocation = TX_DASHES;      
+      MCdb.SupportPhoneNbr = TX_DASHES;
+      MCdb.SupportFaxNbr = TX_DASHES;
+      MCdb.SupportEmail = TX_DASHES;
+      MCdb.PartsPhoneNbr =TX_DASHES;
+      MCdb.PartsFaxNbr = TX_DASHES;
+      MCdb.PartsEmail = TX_DASHES;
+      err=insert(MCdb); 
+   }   
+
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : RefreshMCGrayOut
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Gray out management while refreshing page
+--                      
+--  Value Parameters  :
+--  Variable Params   : Scrn_No = Active screen, MaxRows = # of rows to update,
+--                    : pointer =  starting IO # (0 to 72)
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void RefreshMCGrayOut(int Scrn_No, int page_no, int MaxRows, int pointer)
+{
+int i, j ;
+TEST_ID[0]     = string(MC_ROW1_ID);
+TEST_VALUE[0]  = string(MC_ROW1_INPUT);
+TEST_SELECT[0] = string(MC_ROW1_SELECT);
+TEST_UNITS[0]   = string(MC_ROW1_UNIT);
+j=pointer;
+
+
+ for (i=pointer; i<page_no; i++)
+     {
+ 
+      TEST_POINTER[i] = pointer+i;
+      TEST_ID[i]      = TEST_ID[0]+i;
+      TEST_VALUE[i]   = TEST_VALUE[0]+i;
+      TEST_SELECT[i]  = TEST_SELECT[0]+i;
+      TEST_UNITS[i]    = TEST_UNITS[0]+i;
+
+     }
+
+ for (i=pointer; i<pointer+MaxRows; i++)
+     {
+      widget_enable     (TEST_ID[j],     !MC_Grayout[i+1]);
+      widget_enable     (TEST_VALUE[j],  !MC_Grayout[i+1]);
+      widget_enable     (TEST_SELECT[j], !MC_Grayout[i+1]);
+                 
+      j = j+1;
+     }         
+} 
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : RefreshMCScreen
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Refresh Recipe screen at first screen access or after 
+--                    : keyboard input entry to update Lim function
+--  Value Parameters  :
+--  Variable Params   : Scrn_No = Active screen number
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void RefreshMCScreen(int Scrn_No)
+{
+ begindraw(); 
+ 
+
+
+  switch ( Scrn_No )
+  {
+    case SCREEN_MC1 :  
+                    widget_text (MC_SEARCH_ID, concat(space(1), lsub(TX_MACHINECONFIG_PAGE),space(5), "1" , space(1), TX_FSLASH, space(1), "3") );
+                  // First Column                                
+                    widget_text (MC_ROW1_INPUT, MC.BulkBlankT);
+                    widget_text (MC_ROW2_INPUT, MC.DribBlankT);
+                    widget_text (MC_ROW3_INPUT, MC.LowLevelDebounceT);
+                  
+                    widget_text (MC_ROW4_INPUT, MC.RefillingTimeT);
+                    widget_text (MC_ROW5_INPUT, MC.NumberOfWP);
+                    widget_set_index (MC_ROW6_SELECT, MC.OIML,0);
+  
+                  // Second Column                               
+                    widget_set_index (MC_ROW7_SELECT, Feeder.ListItem[MC.FeederType],0);
+                    widget_set_index (MC_ROW8_SELECT, MC.CFGBagHolder,0);
+                    widget_set_index (MC_ROW9_SELECT, MC.ActuatorPosInvert,0);
+                    
+                    widget_text (MC_ROW10_INPUT, MC.ActuatorRelativeLimit);
+                    widget_text (MC_ROW11_SELECT, MC.Lang2Text); 
+                    widget_text (MC_ROW12_SELECT, MC.Lang3Text);
+                    
+                    RefreshMCGrayOut(SCREEN_MC1, MX_PAGE1, 12, 0);                                                                                                                                    
+                  break;
+                         
+                         
+    case SCREEN_MC2 :    
+                    widget_text (MC_SEARCH_ID, concat(space(1), lsub(TX_MACHINECONFIG_PAGE),space(5), "2" , space(1), TX_FSLASH, space(1), "3") );
+                  // First Column                                 
+                    widget_set_index (MC_ROW13_SELECT, MC.PortCOM2Cfg,0);
+                    widget_set_index (MC_ROW14_SELECT, MC.PortUSBCfg,0);
+                    widget_set_index (MC_ROW15_SELECT, MC.AutoSaveCorrection,0);
+                    
+                    widget_text      (MC_ROW16_INPUT, MC.DischReqDebouncing);
+                    widget_set_index (MC_ROW17_SELECT, MC.PortETHCfg,0);
+                    widget_text      (MC_ROW18_INPUT, MC.PrinterIP);
+
+                   // Second Column                               
+                    widget_set_index (MC_ROW19_SELECT, MC.DischOnDoorSensor,0);
+                    widget_set_index (MC_ROW20_SELECT, MC.DribbleOutOnInBulk,0);            
+                    widget_text      (MC_ROW21_INPUT, MC.PlantLineName);
+                    widget_text      (MC_ROW22_INPUT, MC.SerialNbr);
+                    widget_text      (MC_ROW23_INPUT, MC.CustomerName);                  
+                    widget_text      (MC_ROW24_INPUT, MC.CustomerLocation);                   
+                    
+                    RefreshMCGrayOut(SCREEN_MC2, MX_PAGE2, 12, 12);                    
+                     
+                   break;
+
+    case SCREEN_MC3 :
+                    widget_text (MC_SEARCH_ID, concat(space(1), lsub(TX_MACHINECONFIG_PAGE),space(5), "3" , space(1), TX_FSLASH, space(1), "3") );
+
+                   // First Column                                
+                    widget_text      (MC_ROW25_INPUT, Access_PW[0]);
+                    widget_text      (MC_ROW26_INPUT, Access_PW[1]);
+                    widget_text      (MC_ROW27_INPUT, "Locked");//Access_PW[2]);                        
+                    widget_text      (MC_ROW28_INPUT, MC.SupportPhoneNbr);
+                    widget_text      (MC_ROW29_INPUT, MC.SupportEmail);
+                    
+                    if(CurrentLevel <= Level_SUP)
+                     widget_text      (MC_ROW30_INPUT, "******");
+                    else
+                     widget_text      (MC_ROW30_INPUT, MC.TrialDays); 
+                    
+                  // Second Column
+                    widget_text      (MC_ROW31_INPUT, Access_Timeout[0]);
+                    widget_text      (MC_ROW32_INPUT, Access_Timeout[1]);
+                    widget_text      (MC_ROW33_INPUT, Access_Timeout[2]);
+                    widget_text      (MC_ROW34_INPUT, MC.PartsPhoneNbr);
+                    widget_text      (MC_ROW35_INPUT, MC.PartsFaxNbr);
+                    widget_text      (MC_ROW36_INPUT, MC.PartsEmail);
+                    
+                    RefreshMCGrayOut(SCREEN_MC3, MX_PAGE3, 12, 24);
+                    
+                   break;  
+    case SCREEN_MC4 :
+    
+                    widget_text (MC_SEARCH_ID, concat (space(1), lsub(TX_MACHINECONFIG_PAGE), space(1)));
+                   // First Column                                
+                    widget_image (MC_SAVE2DEFAULT,BTN_SAVE2DFLT);
+                    
+                  // Second Column
+                    widget_image (MC_RESTOREDEFAULT,BTN_RESTOREDFLT);
+
+                   break;
+    
+                                         
+  }
+
+ enddraw();           
+}
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : RefreshMCInputEntry
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/22
+--  
+--  Purpose           : Refresh Input box entry to recipe buffer
+--                      
+--  Value Parameters  :
+--  Variable Params   : value = readevent entered value, Argument = Argument value from readevent 
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void RefreshMCInputEntry(int Scrn_No, int value, string Argument)
+{
+ begindraw();
+  switch (Scrn_No)
+  {  
+    case SCREEN_MC1 :  
+                   switch (value)
+                   {      
+                   // Page 1 of 3
+                      case MC_ROW1_INPUT :  MC.BulkBlankT = decimal (Lim(0,5, Argument));
+                                            break;
+    
+                      case MC_ROW2_INPUT :  MC.DribBlankT = decimal (Lim(0,5, Argument));
+                                            break;  
+     
+                      case MC_ROW3_INPUT :  MC.LowLevelDebounceT = decimal (Lim(0.1,50, Argument));
+                                            break;
+                                    
+                      case MC_ROW4_INPUT :  MC.RefillingTimeT   = decimal (Lim(0,7200, Argument));
+                                            break; 
+                                   
+                      case MC_ROW5_INPUT :  MC.NumberOfWP = decimal (Lim(1,100, Argument));
+                                            break;
+                                              
+                      case MC_ROW10_INPUT :  MC.ActuatorRelativeLimit = decimal (Lim(0,90, Argument));
+                                            break;  
+ 
+                   }
+                 break;  
+
+    case SCREEN_MC2 :  
+                   switch (value)
+                   {
+                   // Page 2 of 3                                                        
+                      case MC_ROW16_INPUT : MC.DischReqDebouncing = decimal (Lim(0,0.5,Argument));
+                                            break; 
+                      case MC_ROW18_INPUT : MC.PrinterIP = CheckPrinterIP(Argument);
+                                              break;
+                      case MC_ROW21_INPUT : MC.PlantLineName = Argument;
+                                            break; 
+                                             
+                      case MC_ROW22_INPUT : MC.SerialNbr = Argument;
+                                            break;   
+                      
+                      case MC_ROW23_INPUT : MC.CustomerName = Argument;
+                                            break;
+                                            
+                      case MC_ROW24_INPUT : MC.CustomerLocation = Argument;
+                                            break;                                                                     
+ 
+                   }
+                break;                                                                                                                                        
+
+    case SCREEN_MC3 :  
+                   switch (value)
+                   {
+                   // Page 3 of 3                          
+                      case MC_ROW25_INPUT : //MC.PasswordOP = int (Lim(1,99999,Argument));
+                                            //Access_PW[0] = MC.PasswordOP;
+                                            Access_PW[0] = int (Lim(1,99999,Argument));
+                                            break; 
+                                             
+                      case MC_ROW26_INPUT : //MC.PasswordSUP = int (Lim(1,99999,Argument));
+                                            //Access_PW[1] = MC.PasswordSUP;
+                                            Access_PW[1] = int (Lim(1,99999,Argument));
+                                            break;   
+                      
+                      case MC_ROW27_INPUT : //MC.PasswordPT = int (Lim(1,99999,Argument));
+                                            //Access_PW[2] = MC.PasswordPT;
+                                            Access_PW[2] = int (Lim(1,99999,Argument));
+                                            break;
+                                            
+                      case MC_ROW28_INPUT : MC.SupportPhoneNbr = Argument;
+                                            break;
+                                            
+                      case MC_ROW29_INPUT : MC.SupportEmail = Argument;
+                                            break;
+                                            
+                      case MC_ROW30_INPUT : MC.TrialDays = int (Lim(0,365,Argument));
+                                            break;                                            
+                      
+                      case MC_ROW31_INPUT : Access_Timeout[0] = decimal (Lim(1,1440,Argument));
+                                            break;  
+                                           
+                      case MC_ROW32_INPUT : Access_Timeout[1] = decimal (Lim(1,1440,Argument));
+                                            break;  
+                                            
+                      case MC_ROW33_INPUT : Access_Timeout[2] = decimal (Lim(1,1440,Argument));
+                                            break;   
+                                            
+                      case MC_ROW34_INPUT : MC.PartsPhoneNbr = Argument;
+                                            break; 
+                                            
+                      case MC_ROW35_INPUT : MC.PartsFaxNbr = Argument;
+                                            break;
+                                            
+                      case MC_ROW36_INPUT : if(Argument == "RESETREGKEY") ResetRegistryKey = Execute; 
+                                            else MC.PartsEmail = Argument;
+                                            break;
+                                                                                               
+ 
+                   }
+                 break;    
+  }
+ enddraw();
+
+}
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : RefreshMCComboBoxEntry
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/09/24
+--  
+--  Purpose           : Refresh ComboBox box entry to recipe buffer
+--                      
+--  Value Parameters  :
+--  Variable Params   : value = readevent entered value, Argument = Argument value from readevent 
+                      :  
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void RefreshMCComboBoxEntry(int Scrn_No, int value, string Argument)
+{
+ begindraw();
+  switch (Scrn_No)
+  {  
+    case SCREEN_MC1 :  
+                   switch (value)
+                   {       
+                      case MC_ROW6_SELECT :   MC.OIML = int (Argument);
+                                              CheckOIML();
+                                              break;   
+                      case MC_ROW7_SELECT :   MC.FeederType = Feeder.ListNbr[int (Argument)];
+                                              WP.FeedAlgoType = ValidateAlgoType(MC.FeederType,WP.FeedAlgoType,WP.FeedAlgoType);
+                                              break;
+                      case MC_ROW8_SELECT :   MC.CFGBagHolder = int (Argument);
+                                              break;
+                      case MC_ROW9_SELECT :   MC.ActuatorPosInvert = int (Argument);
+                                              break;
+                      case MC_ROW11_SELECT :  MC.Language2 = int (Argument);
+                                              break;
+                      case MC_ROW12_SELECT :  MC.Language3 = int (Argument);
+                                              break;                                                                                                                                            
+                   }
+                 break;  
+                   
+    case SCREEN_MC2 :  
+                   switch (value)
+                   {      
+                      case MC_ROW13_SELECT :  ContOutCOM2EditOK = CheckContOut(int (Argument),MC.PortETHCfg);
+                                              if(ContOutCOM2EditOK)MC.PortCOM2Cfg = int (Argument);
+                                              else widget_set_index (MC_ROW13_SELECT, MC.PortCOM2Cfg,0);
+                                              break;
+                      case MC_ROW14_SELECT :  MC.PortUSBCfg = int (Argument);
+                                              break;
+                      case MC_ROW15_SELECT :  MC.AutoSaveCorrection = int (Argument);
+                                              break;
+                      case MC_ROW17_SELECT :  ContOutETHEditOK = CheckContOut(MC.PortCOM2Cfg,int (Argument));
+                                              if(ContOutETHEditOK)MC.PortETHCfg = int (Argument);
+                                              else widget_set_index (MC_ROW17_SELECT, MC.PortETHCfg,0);
+                                              break;                
+                      case MC_ROW19_SELECT :  MC.DischOnDoorSensor = int (Argument);
+                                              break; 
+                      case MC_ROW20_SELECT :  MC.DribbleOutOnInBulk = int (Argument);
+                                              break;                                                                                             
+                       
+                   }
+                 break;  
+  }
+ enddraw();
+} 
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : CreateMachineParaMCages
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/08/14
+--  
+--  Purpose           : Create Machine Parameters Pages Manager 
+--                      
+--  Value Parameters  :
+--  Variable Params   : none 
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void CreateMCPages(void) 
+{
+    CreateMCPage1();
+    CreateMCPage2();
+    CreateMCPage3();
+    CreateMCPage4();
+}
+ 

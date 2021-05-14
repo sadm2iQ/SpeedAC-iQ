@@ -1,0 +1,129 @@
+
+Interface
+-------------------------
+
+Com0(Eth)
+     Port       1234
+      Protocol   None
+
+Com1(SIM1)
+    Baud  19200
+    Databits 8
+     Parity Odd
+     Handshake None
+      Protocol   None
+
+Com2(SIM2)
+    Baud  19200
+    Databits 8
+     Parity Odd
+     Handshake None
+      Protocol   None
+
+Com3(SIM3)
+    Baud   9600
+    Databits 8
+     Parity None
+     Handshake None
+      Protocol   None
+
+Com4(SIM4)
+    Baud   9600
+    Databits 8
+     Parity None
+     Handshake None
+      Protocol   None
+
+Com5(SIM5)
+    Baud   9600
+    Databits 8
+     Parity None
+     Handshake None
+      Protocol   None
+
+Com6(SIM6)
+    Baud   9600
+    Databits 8
+     Parity None
+     Handshake None
+      Protocol   None
+
+General
+-------------------------
+Language        English
+Keyboard:      GB
+Time zone:     
+Date            YYYY/MM/DD
+Time            HH:MM:SS
+Country Code    
+Decimal Char.   .
+Approval Signs  No
+Taremode        Gross/Net
+Cont.Output     Flintec
+                SIM3
+                Rate 50 Hz
+Light off (Min.): 5
+Power off (Min.): 0
+
+Calibration
+-------------------------
+
+Scale 1
+Single Range 
+One Interval
+Capacity          60
+Interval        0.01
+Unit              kg
+Geo Value         20
+Zero (mV/V)  0.00000
+Load (mV/V)  0.88740
+Motion Window   0.5D
+Motion Counter    10
+Filter Size       11
+Auto Zero Range 0.5D
+PbZero (%) +       2
+PbZero (%) -       2
+PowerUp Zero     OFF
+Overload           9
+Incline  Switch  OFF
+NTEP Approval?     N
+Underload 20d?     Y
+With Taring?       Y
+Onscreen typeplate?Y
+Update Rate      225
+
+Configuration
+-------------------------
+1.Scale         ADM
+                ADM1
+1.BIO:          PIM
+2.BIO:          PIM
+1.AOut:         MAI
+                SIM1
+                Address 2
+                X1
+                0-10V
+                Output Appl.
+                 0V=0
+                10V=4095
+2.AOut:         MAI
+                SIM1
+                Address 3
+                X1
+                0-10V
+                Output Appl.
+                 0V=0
+                10V=4095
+1.AIn:          MAI
+2.AIn:          MAI
+Fieldbus        Off
+
+Network
+-------------------------
+IP              10.0.1.175
+Netmask         255.255.0.0
+Gateway         0.0.0.0
+DNS             
+FTP Password    2234
+Web access      Off
+Terminal Name   

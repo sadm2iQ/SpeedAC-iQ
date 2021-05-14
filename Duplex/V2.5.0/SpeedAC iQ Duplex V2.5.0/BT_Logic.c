@@ -1,0 +1,6150 @@
+﻿/*-----------------------------------------------------------------------------
+-- File Name: BT_Logic.c 
+--
+-- Copyright 2015 PremierTech as an unpublished work. 
+-- All Rights Reserved.
+--
+-- The information contained herein is confidential property of 
+-- Premier Tech.  The use, copying, transfer or disclosure of such
+-- information is prohibited except by express written agreement with
+-- Premier Tech.
+--
+-- First written on August, 2015 by Steve Santerre.
+--
+-- Module Description:
+-- This file is dedicated to all control logic and peripheral functions
+------------------------------------------------------------------------------*/
+
+
+//Global Variables
+int SeqModeManagerMEM, SeqMasterMEM, SeqSpoutMEM, SeqWeighPanMEM, SeqFeederMEM,SeqFeedSTDMEM,SeqManDischargeMEM,SeqKickerMEM;
+int Seq2MasterMEM, Seq2WeighPanMEM, Seq2FeederMEM,Seq2FeedSTDMEM,Seq2ManDischargeMEM;
+int ManualModeStep;
+bool OutOfTol[2];
+bool FirstWeighment[2]=ON;
+bool I_StartMem,I_StopMem,DischReq,I_ResetOutofTolAlarmMem,BagAtKickerMem,KickerRetractedOffMem,
+     I_ClearFaultsMem,I_TglEmptyHopper,I_HopperEmptyMem,I_ManDischMem1,I_ManDischMem2;
+int I;
+bool WeighingDataRefreshFlag[2];
+bool KnockHammerFlag,KnockHammerOut,KnockHammerFlipped,FeedCycleCancelled[2];
+bool VibrationMem[2];
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : GetAoutVibration                             
+--  Created by        : FrÃ©dÃ©ric Allard                                     
+--  Last modified on  : 2018/03                                             
+--                                                                          
+--  Purpose           : Called during dribble feed. Returns the analog pct
+--                      to make the catch gate vibrate
+--                                                                                                                                                                                                           
+--------------------------------------------------------------------------*/
+float GetAoutVibration(int ScaleNo)
+{
+   decimal Temp%6.2,MinFeedingMem%6.2;
+   int T_VibrationPeriodNo;
+   
+   if(ScaleNo == 1)
+   {
+    T_VibrationPeriodNo = T_VibrationPeriod;
+    MinFeedingMem = WP.MinFeeding1;
+   }
+   
+   if(ScaleNo == 2)
+   {
+    T_VibrationPeriodNo = T_VibrationPeriod2;
+    MinFeedingMem = WP.MinFeeding2;
+   }
+   
+   if(T_Dn(T_VibrationPeriodNo) || !T_EN[T_VibrationPeriodNo])
+   {
+      T_EnOff(T_VibrationPeriodNo);
+      T_PRE[T_VibrationPeriodNo] = WP.VibrationPeriod;
+      T_EnOn(T_VibrationPeriodNo);
+      VibrationMem[ScaleNo-1] = !VibrationMem[ScaleNo-1];
+   }
+   
+   if(VibrationMem[ScaleNo-1])
+   {
+      Temp = MinFeedingMem + (WP.VibrationAmplitude);
+      if(Temp > 100.00)
+      {
+         Temp = 100.00;
+      }
+   }
+   else
+   {
+      Temp = MinFeedingMem;
+   }
+   return  float(Temp);
+}   
+
+/****************Discharge Request Check***************************/
+void DischReqCheck(void)
+ {
+  int SeqModeManagerTemp;
+   
+  if(!IOTestFlag)
+  {
+   if(Input_State(I_DischReq))
+   {
+    if(!DischReq &&(WP.FeedAlgoType != FeediQSim || (WP.FeedAlgoType == FeediQSim 
+       && (SeqSpout == stp_INIT || (SeqSpout == stp_SPOUTOKTODISCH && FaultState(FltS_BagNotDetected)) || (MC.CFGBagHolder!=0 && IO_Enable[I_EmptyBagReady]))))) 
+    {  
+     if((!DischReqInputOn && SeqModeManager == stp_OFF_MODE) || SeqModeManager != stp_OFF_MODE) //Use to make sure that input is taken in account only when in accepted modes
+     { 
+      DischReq=ON;
+     }
+    } 
+    DischReqInputOn = ON;
+   if(DischReq && SeqModeManager == stp_OFF_MODE && SeqModeManagerTemp != SeqModeManager)
+    {
+     DischReq=OFF;
+    } 
+   }
+        
+  if(DischReqMem || DischReqInputOn)
+    if(!Input_State(I_DischReq) || (WP.FeedAlgoType == FeediQSim && IO_State[O_Discharge]))
+   {
+   if(!T_EN[T_DischReqDebouncing])   
+     if(T_PRE[T_DischReqDebouncing]!=0) T_EnOn(T_DischReqDebouncing);
+               
+   if(T_Dn(T_DischReqDebouncing)|| T_PRE[T_DischReqDebouncing]==0)  
+     {
+     DischReqMem=OFF;
+     DischReq=OFF;
+     DischReqInputOn = OFF;
+     if(T_EN[T_DischReqDebouncing])T_EnOff(T_DischReqDebouncing);
+     }
+   }
+   if(SeqModeManagerTemp != SeqModeManager)
+    SeqModeManagerTemp = SeqModeManager;
+  }
+ } 
+
+/****************Hopper Low Level Fault***************************/
+bool CheckLowLevel(int ScaleNo)
+{
+ bool LowLevelOK=OFF;
+  if(SeqModeManager!=stp_OFF_MODE && SeqModeManager!=stp_MANUAL_MODE)
+   {
+    
+    if(ScaleNo == 1)
+    { 
+     if(LowLevel[Scale1] && !EmptyHopper)
+     {
+       LowLevelOK=OFF;
+       if(!FaultState(FltW_HopperLowLevel)) 
+        FaultHandler(FltW_HopperLowLevel,"");
+     }
+     else 
+      {
+       if(FaultState(FltW_HopperLowLevel))
+        {
+         if(!LowLevelManReset || EmptyHopper)FaultResetReq();
+        }
+       else
+        LowLevelOK=ON;
+      }
+    }
+    
+    if(ScaleNo == 2)
+    { 
+     if(LowLevel[Scale2] && !EmptyHopper)
+     {
+       LowLevelOK=OFF;
+       if(!FaultState(FltW_HopperLowLevel2)) 
+        FaultHandler(FltW_HopperLowLevel2,"");
+     }
+     else 
+      {
+       if(FaultState(FltW_HopperLowLevel2))
+        {
+         if(!LowLevelManReset || EmptyHopper)FaultResetReq();
+        }
+       else
+        LowLevelOK=ON;
+      }
+    }
+   
+   }
+  return(LowLevelOK);   
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : OutReset();
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : This function is called to Refresh The Databases
+--                     used in Background Task
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+void OutReset(void)
+{
+int i,tata,DoNoReset;
+
+for(i=NUMBEROFINPUTS+1;i<=MAX_IO;i++) 
+  {
+    if(i == O_Fault || (i == O_BagHolder && WP.WeighmentsPerUnit > 1) )
+     DoNoReset = ON;
+    else
+     Output_OFF(i);
+     
+      
+    IO_Force[i]     = OFF;
+    IO_TestState[i] = OFF;
+  }
+StopAnalogOut();
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : ClearComparators();
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/01
+--  
+--  Purpose           : This function is called to Clear the Comparators
+--                     
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+void ClearComparators(int ScaleNo)
+{
+int cmpoffset;
+int scale_channel,scale_number;
+
+if(ScaleNo == 1)
+ {
+  scale_channel = SCALE_CHANNEL1;
+  scale_number  = SCALE_NUMBER1;
+ } 
+ 
+ if(ScaleNo == 2)
+ {
+  scale_channel = SCALE_CHANNEL2;
+  scale_number  = SCALE_NUMBER2;
+ }
+ 
+ if(ScaleNo == 1) cmpoffset = 0;
+ if(ScaleNo == 2) cmpoffset = 8;
+
+ clrcomparator(scale_number,Scale1CmpBulk+cmpoffset);
+ clrcomparator(scale_number,Scale1CmpDribble+cmpoffset);
+ clrcomparator(scale_number,Scale1CmpCatchGate+cmpoffset);
+ clrcomparator(scale_number,Scale1CmpAout1+cmpoffset);
+ clrcomparator(scale_number,Scale1CmpAout2+cmpoffset);
+ CmpBulkActive[ScaleNo-1] = OFF;
+ CmpDribbleActive[ScaleNo-1] = OFF;
+ CmpCatchGateActive[ScaleNo-1] = OFF;
+}
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : ClearAnalogOuts();
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/04
+--  
+--  Purpose           : This function is called to Clear the Analog Outputs
+--                     
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+void ClearAnalogOuts(int ScaleNo)
+{
+ if(ScaleNo == 1)
+  { 
+   if(AOUTActive[AIO1]) aout(AIO1,0);
+   if(AOUTActive[AIO3]) aout(AIO3,0);
+  }
+ 
+ if(ScaleNo == 2)
+  { 
+   if(AOUTActive[AIO2])  aout(AIO2,0);
+   if(AOUTActive[AIO4])  aout(AIO4,0);
+  } 
+} 
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : StreamRegHigh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/28
+--  
+--  Purpose           : Raise Stream Regulator and Start Delay
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void StreamRegRaise(int ScaleNo)
+{
+ if(ScaleNo == 1)
+   {  
+    if(!T_EN[T_StreamRegHigh])
+     {
+      Output_ON(O_StreamRegulator1);
+      T_EnOn(T_StreamRegHigh);
+     }
+   }
+    
+ if(ScaleNo == 2)
+   {  
+    if(!T_EN[T_StreamRegHigh2])
+     {
+      Output_ON(O_StreamRegulator2);
+      T_EnOn(T_StreamRegHigh2);
+     }
+   }    
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : StreamRegLower
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/10/02
+--  
+--  Purpose           : Raise Stream Regulator and Start Delay
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void StreamRegLower(int ScaleNo)
+{
+   if(ScaleNo == 1)
+   { 
+    Output_OFF(O_StreamRegulator1);
+    T_EnOff(T_StreamRegHigh);
+   } 
+   
+   if(ScaleNo == 2)
+   { 
+    Output_OFF(O_StreamRegulator2);
+    T_EnOff(T_StreamRegHigh2);
+   }
+}
+     
+      
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : FeedSTDReset();
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/01
+--  
+--  Purpose           : This function is called to Clear the Comparators
+--                     
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+void FeedSTDReset(int ScaleNo)
+{
+ ClearComparators(ScaleNo);
+ ClearAnalogOuts(ScaleNo);
+ if(ScaleNo == 1)
+ {
+  Output_OFF(O_BulkFeed1);
+  Output_OFF(O_DribbleFeed1);
+  T_EnOff(T_BulkBlankT);
+  T_EnOff(T_DribbleBlankT);
+ }
+ 
+ if(ScaleNo == 2)
+ {
+  Output_OFF(O_BulkFeed2);
+  Output_OFF(O_DribbleFeed2);
+  T_EnOff(T_BulkBlankT2);
+  T_EnOff(T_DribbleBlankT2);
+ } 
+
+ StreamRegLower(ScaleNo);
+ if(WP.CatchGateDelay < CATCHGATEDELAYMAX) 
+  {
+   if(ScaleNo == 1)Output_OFF(O_CatchGate1);
+   if(ScaleNo == 2)Output_OFF(O_CatchGate2);
+  }
+
+
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : InitStandardFeed();
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/04
+--  
+--  Purpose           : This function is called to Initialize Standard Feed
+--                     
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+void InitStandardFeed(bool setfilter,int ScaleNo)
+{
+bool Pass[10];
+int scale_channel,scale_number;
+
+if(ScaleNo == 1)
+ {
+  scale_channel = SCALE_CHANNEL1;
+  scale_number  = SCALE_NUMBER1;
+ } 
+ 
+ if(ScaleNo == 2)
+ {
+  scale_channel = SCALE_CHANNEL2;
+  scale_number  = SCALE_NUMBER2;
+ }
+ 
+  OpenConnection(ScaleNo);
+  Pass[0]=SetiQFeedAlgorithm (IQ_FEEDING_ALGORITHM_SCALE,ScaleNo);
+  Pass[1]=iQOutRelease(ScaleNo);
+  if(setfilter)
+   {
+    Pass[2]=iQSetSlowFilterSize (scale_channel, scale_number,Lim((SMFilterSize-5),(SMFilterSize+5),MP.StdFilterSize));
+   } 
+  if(WP.CatchGateDelay == CATCHGATEDELAYMAX) 
+    {
+    if(ScaleNo == 1)Output_ON(O_CatchGate1);
+    if(ScaleNo == 2)Output_ON(O_CatchGate2);
+    }
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : HoldCycle
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/24/01
+--  
+--  Purpose           : Hold Cycle for Standard Feed
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void HoldCycle(int ScaleNo)
+{
+    FeedSTDReset(ScaleNo);
+    Output_ON(O_CycleInHold);
+    CycleInHoldMem[ScaleNo-1] = ON;
+    HoldCycleTgl[ScaleNo-1] = OFF;
+    Start_PauseBtn = StartBtn;
+
+}
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : UnHoldCycle
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/24/01
+--  
+--  Purpose           : Hold Cycle for Standard Feed
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+
+bool UnHoldCycle(int ScaleNo)
+{
+  bool UnHoldInDribble;
+    
+    if(ScaleNo == 1)
+     {
+      if(NetWeight[Scale1] > (0.9*WP.BulkCutoff1)) 
+       UnHoldInDribble = ON;
+      else 
+       UnHoldInDribble = OFF; 
+     }
+    
+    if(ScaleNo == 2)
+     {
+      if(NetWeight[Scale2] > (0.9*WP.BulkCutoff2)) 
+       UnHoldInDribble = ON;
+      else 
+       UnHoldInDribble = OFF; 
+     }   
+    
+    Output_OFF(O_CycleInHold);
+    CycleInHoldMem[ScaleNo-1] = OFF;
+    HoldCycleTgl[ScaleNo-1] = OFF;
+    Start_PauseBtn = PauseBtn;
+
+  return(UnHoldInDribble);
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Discharged
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Manage Variable when Discharging
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void Discharged(int ScaleNo)
+{
+  if((ScaleNo==1 && Seq2Master != stp_DISCHARGING) || (ScaleNo==2 && SeqMaster != stp_DISCHARGING))
+   {
+    WeighPerUnitAcc = 0;
+    if(WeighPerUnitDone) UnitCompleted = ON;
+    WeighPerUnitDone = OFF;
+   } 
+  WeighmentAborted[ScaleNo-1] = OFF;
+  WeighPerUnitSaveFlag = Execute;
+  RefreshAutoScreenReq();
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : LimitActuator
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Limit of Actuator
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void LimitActuator(void)
+{
+ float LowLimit,HighLimit;
+ int LowMin = 2, HighMax = 98;
+ 
+     if(!MC.ActuatorPosInvert)
+       {
+        LowLimit = LowMin;
+        if(MC.ActuatorExtendLimit < HighMax && MC.ActuatorExtendLimit > 0)
+         HighLimit = MC.ActuatorExtendLimit;
+        else
+         HighLimit = HighMax; 
+       }
+      else
+       {
+        HighLimit = HighMax;
+        if(MC.ActuatorExtendLimit > LowMin)
+         LowLimit = MC.ActuatorExtendLimit;
+        else
+         LowLimit = LowMin; 
+       } 
+       
+ if(!Simul)
+  ActuatorLivePos[Scale1] = ain(AIO1);
+ 
+    if(MC.ActuatorPosInvert)
+     ActuatorPosition[Scale1] = 100 - ActuatorLivePos[Scale1];
+    else
+     ActuatorPosition[Scale1] = ActuatorLivePos[Scale1];
+ 
+ if(IO_Enable[O_ExtendActuator1] && IO_Enable[O_RetractActuator1])
+  if(IO_State[O_ExtendActuator1] || IO_TestState[O_ExtendActuator1] || IO_State[O_RetractActuator1] || IO_TestState[O_RetractActuator1])
+   {
+      
+    if(!MC.ActuatorPosInvert && ActuatorPosition[Scale1] >= HighLimit || MC.ActuatorPosInvert && ActuatorPosition[Scale1] <= LowLimit)
+    {
+     IO_Force[O_ExtendActuator1]     = OFF;
+     IO_TestState[O_ExtendActuator1] = OFF;
+     Output_OFF(O_ExtendActuator1);
+    }
+    if(MC.ActuatorPosInvert && ActuatorPosition[Scale1] >= HighLimit || !MC.ActuatorPosInvert && ActuatorPosition[Scale1] <= LowLimit)
+    {
+     IO_Force[O_RetractActuator1]     = OFF;
+     IO_TestState[O_RetractActuator1] = OFF;
+     Output_OFF(O_RetractActuator1);
+    }  
+   } 
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : LimitActuator2
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Limit of Actuator
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void LimitActuator2(void)
+{
+ float LowLimit,HighLimit;
+ int LowMin = 2, HighMax = 98;
+ 
+     if(!MC.ActuatorPosInvert)
+       {
+        LowLimit = LowMin;
+        if(MC.ActuatorExtendLimit < HighMax && MC.ActuatorExtendLimit > 0)
+         HighLimit = MC.ActuatorExtendLimit;
+        else
+         HighLimit = HighMax; 
+       }
+      else
+       {
+        HighLimit = HighMax;
+        if(MC.ActuatorExtendLimit > LowMin)
+         LowLimit = MC.ActuatorExtendLimit;
+        else
+         LowLimit = LowMin; 
+       } 
+       
+ if(!Simul)
+  ActuatorLivePos[Scale2] = ain(AIO2);
+ 
+    if(MC.ActuatorPosInvert)
+     ActuatorPosition[Scale2] = 100 - ActuatorLivePos[Scale2];
+    else
+     ActuatorPosition[Scale2] = ActuatorLivePos[Scale2];
+ 
+ if(IO_Enable[O_ExtendActuator2] && IO_Enable[O_RetractActuator2])
+  if(IO_State[O_ExtendActuator2] || IO_TestState[O_ExtendActuator2] || IO_State[O_RetractActuator2] || IO_TestState[O_RetractActuator2])
+   {
+      
+    if(!MC.ActuatorPosInvert && ActuatorPosition[Scale2] >= HighLimit || MC.ActuatorPosInvert && ActuatorPosition[Scale2] <= LowLimit)
+    {
+     IO_Force[O_ExtendActuator2]     = OFF;
+     IO_TestState[O_ExtendActuator2] = OFF;
+     Output_OFF(O_ExtendActuator2);
+    }
+    if(MC.ActuatorPosInvert && ActuatorPosition[Scale2] >= HighLimit || !MC.ActuatorPosInvert && ActuatorPosition[Scale2] <= LowLimit)
+    {
+     IO_Force[O_RetractActuator2]     = OFF;
+     IO_TestState[O_RetractActuator2] = OFF;
+     Output_OFF(O_RetractActuator2);
+    }  
+   } 
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Actuator
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Positionning of Actuator
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+bool Actuator(void)
+{
+bool  ActuatorDone,pulse;
+float Hyster;
+float Offset;
+int ActStep;
+
+ 
+ if(IO_Enable[O_ExtendActuator1] && IO_Enable[O_ExtendActuator1])
+  {
+  if(!T_EN[T_ActuatorON]) T_EnOn(T_ActuatorON);
+  if(T_Dn(T_ActuatorON) && !T_EN[T_ActuatorOFF]) T_EnOn(T_ActuatorOFF);
+  if(T_Dn(T_ActuatorOFF)){T_EnOff(T_ActuatorON);T_EnOff(T_ActuatorOFF);}
+  pulse = !T_EN[T_ActuatorOFF];
+  
+  
+  ActuatorDone = OFF;
+  MessageDisplay(lsub(TX_MSGACTUATORMOVING),Step_Message,1);
+  if(!Simul)
+   ActuatorPosition[Scale1] = ain(AIO1);
+   
+   if(MC.ActuatorPosInvert)
+    {
+     ActuatorPosition[Scale1] = 100 - ActuatorLivePos[Scale1];
+     Hyster = HysterVal;// * -1;
+     Offset = OffsetVal;// * -1;
+    } 
+    else
+    {
+     ActuatorPosition[Scale1] = ActuatorLivePos[Scale1];
+     Hyster = HysterVal;
+     Offset = OffsetVal;
+    }
+    
+    WP.ActuatorPos1 = LimActuator(5,95,WP.ActuatorPos1);
+  
+    if(ActuatorPosition[Scale1] < (WP.ActuatorPos1 - Hyster))
+    {
+     if(ActuatorPosition[Scale1] < (WP.ActuatorPos1 - Offset)) 
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep = Act_Ext;
+       else
+        ActStep = Act_Ret; 
+      }
+     else
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep = Act_ExtPulsed;
+       else
+        ActStep =  Act_RetPulsed; 
+      }
+    }
+    
+    else if(ActuatorPosition[Scale1] > (WP.ActuatorPos1 + Hyster))
+    {  
+     if(ActuatorPosition[Scale1] > (WP.ActuatorPos1 + Offset))
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep =  Act_Ret;
+       else
+        ActStep = Act_Ext; 
+      } 
+     else
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep =  Act_RetPulsed;
+       else
+        ActStep = Act_ExtPulsed;  
+      }
+    }  
+      
+    else if(ActuatorPosition[Scale1] >= (WP.ActuatorPos1 - Hyster) && ActuatorPosition[Scale1] <= (WP.ActuatorPos1 + Hyster))
+     {
+      ActStep =  Act_Positioned;
+     }  
+    
+    switch(ActStep)
+    {
+     case Act_Ext:
+      Output_OFF(O_RetractActuator1);
+      Output_ON(O_ExtendActuator1);
+      break;
+     
+     case Act_ExtPulsed:
+      Output_OFF(O_RetractActuator1);
+      if(pulse) 
+       Output_ON(O_ExtendActuator1);
+      else      
+       Output_OFF(O_ExtendActuator1); 
+      break;
+     
+     case Act_Positioned:
+       Output_OFF(O_ExtendActuator1);
+       Output_OFF(O_RetractActuator1); 
+       ActuatorDone = ON;
+       break; 
+      
+     case Act_RetPulsed:
+      Output_OFF(O_ExtendActuator1);
+      if(pulse) 
+       Output_ON(O_RetractActuator1);
+      else      
+       Output_OFF(O_RetractActuator1); 
+      break;
+      
+     case Act_Ret:
+      Output_OFF(O_ExtendActuator1);
+      Output_ON(O_RetractActuator1);
+      break; 
+    
+    } 
+    
+  }
+ else ActuatorDone = ON;
+ return(ActuatorDone); 
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Actuator
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Positionning of Actuator
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+bool Actuator2(void)
+{
+bool  ActuatorDone,pulse;
+float Hyster;
+float Offset;
+int ActStep;
+
+ 
+ if(IO_Enable[O_ExtendActuator2] && IO_Enable[O_ExtendActuator2])
+  {
+  if(!T_EN[T_ActuatorON2]) T_EnOn(T_ActuatorON2);
+  if(T_Dn(T_ActuatorON2) && !T_EN[T_ActuatorOFF2]) T_EnOn(T_ActuatorOFF2);
+  if(T_Dn(T_ActuatorOFF2)){T_EnOff(T_ActuatorON2);T_EnOff(T_ActuatorOFF2);}
+  pulse = !T_EN[T_ActuatorOFF2];
+  
+  
+  ActuatorDone = OFF;
+  MessageDisplay(lsub(TX_MSGACTUATORMOVING),Step_Message,2);
+  if(!Simul)
+   ActuatorPosition[Scale2] = ain(AIO2);
+   
+   if(MC.ActuatorPosInvert)
+    {
+     ActuatorPosition[Scale2] = 100 - ActuatorLivePos[Scale2];
+     Hyster = HysterVal;// * -1;
+     Offset = OffsetVal;// * -1;
+    } 
+    else
+    {
+     ActuatorPosition[Scale2] = ActuatorLivePos[Scale2];
+     Hyster = HysterVal;
+     Offset = OffsetVal;
+    }
+    
+    WP.ActuatorPos2 = LimActuator(5,95,WP.ActuatorPos2);
+  
+    if(ActuatorPosition[Scale2] < (WP.ActuatorPos2 - Hyster))
+    {
+     if(ActuatorPosition[Scale2] < (WP.ActuatorPos2 - Offset)) 
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep = Act_Ext;
+       else
+        ActStep = Act_Ret; 
+      }
+     else
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep = Act_ExtPulsed;
+       else
+        ActStep =  Act_RetPulsed; 
+      }
+    }
+    
+    else if(ActuatorPosition[Scale2] > (WP.ActuatorPos2 + Hyster))
+    {  
+     if(ActuatorPosition[Scale2] > (WP.ActuatorPos2 + Offset))
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep =  Act_Ret;
+       else
+        ActStep = Act_Ext; 
+      } 
+     else
+      {
+       if(!MC.ActuatorPosInvert)
+        ActStep =  Act_RetPulsed;
+       else
+        ActStep = Act_ExtPulsed;  
+      }
+    }  
+      
+    else if(ActuatorPosition[Scale2] >= (WP.ActuatorPos2 - Hyster) && ActuatorPosition[Scale2] <= (WP.ActuatorPos2 + Hyster))
+     {
+      ActStep =  Act_Positioned;
+     }  
+    
+    switch(ActStep)
+    {
+     case Act_Ext:
+      Output_OFF(O_RetractActuator2);
+      Output_ON(O_ExtendActuator2);
+      break;
+     
+     case Act_ExtPulsed:
+      Output_OFF(O_RetractActuator2);
+      if(pulse) 
+       Output_ON(O_ExtendActuator2);
+      else      
+       Output_OFF(O_ExtendActuator2); 
+      break;
+     
+     case Act_Positioned:
+       Output_OFF(O_ExtendActuator2);
+       Output_OFF(O_RetractActuator2); 
+       ActuatorDone = ON;
+       break; 
+      
+     case Act_RetPulsed:
+      Output_OFF(O_ExtendActuator2);
+      if(pulse) 
+       Output_ON(O_RetractActuator2);
+      else      
+       Output_OFF(O_RetractActuator2); 
+      break;
+      
+     case Act_Ret:
+      Output_OFF(O_ExtendActuator2);
+      Output_ON(O_RetractActuator2);
+      break; 
+    
+    } 
+    
+  }
+ else ActuatorDone = ON;
+ return(ActuatorDone); 
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : WP_IOs
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Indicate actual WP to Outputs
+--                      & change WP according to inputs
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+
+void WP_IOs(void)
+{
+
+  if(IO_Enable[I_ChangeWPIN1])
+   {
+    if(Input_State(I_ChangeWPIN1)) setbit(0,RecipeFromInputs);
+    else                           clrbit(0,RecipeFromInputs);
+    
+    if(Input_State(I_ChangeWPIN2)) setbit(1,RecipeFromInputs);
+    else                           clrbit(1,RecipeFromInputs);
+    
+    if(Input_State(I_ChangeWPIN3)) setbit(2,RecipeFromInputs);
+    else                           clrbit(2,RecipeFromInputs);
+    
+    if(Input_State(I_ChangeWPIN4)) setbit(3,RecipeFromInputs);
+    else                           clrbit(3,RecipeFromInputs);
+
+   if(RecipeFromInputs != MemRecipe)
+    {                   
+    if((SeqModeManager == stp_OFF_MODE || SeqModeManager == stp_STOP_MODE) && RecipeFromInputs != 0) //SADM2
+     {
+      LoadWPFromInputsFlag = Execute;
+      ChangeWPInStopMode = ON;
+     }
+    }                        
+   }
+
+  if(IO_Enable[O_WPNumbOUT1])
+  {
+    if(SeqModeManager == stp_AUTO_MODE)
+    {
+     if(MemRecipe!=MemRecipeIO)
+     {
+      if(MemRecipe>0&&MemRecipe<=15)
+       {
+        if(bit(0,MemRecipe))Output_ON(O_WPNumbOUT1);
+        else Output_OFF(O_WPNumbOUT1);
+        if(bit(1, MemRecipe)) Output_ON(O_WPNumbOUT2);
+        else Output_OFF(O_WPNumbOUT2);
+        if(bit(2, MemRecipe)) Output_ON(O_WPNumbOUT3);
+        else Output_OFF(O_WPNumbOUT3);
+        if(bit(3, MemRecipe)) Output_ON(O_WPNumbOUT4);
+        else Output_OFF(O_WPNumbOUT4);
+       }
+      
+      else
+       {
+       Output_OFF(O_WPNumbOUT1);
+       Output_OFF(O_WPNumbOUT2);
+       Output_OFF(O_WPNumbOUT3);
+       Output_OFF(O_WPNumbOUT4);
+       }
+     MemRecipeIO = MemRecipe;
+     }
+    }
+   else MemRecipeIO = 0;  
+  }
+
+
+}
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : iQSimFeed
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Prepare and Start Simulated Weight for Feeding
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void iQSimFeed(int ScaleNo)
+{
+decimal BulkDuration%3.1,DribbleDuration%3.1;
+decimal BulkM1%6.3,BulkM2%6.3,BulkB1%6.2,BulkB2%6.2,DribbleM1%6.3,DribbleM2%6.3,DribbleB1%6.2,DribbleB2%6.2;
+string BulkFormula[64],DribbleFormula[64];
+int scale_channel,scale_number;
+float BulkCutoff;
+
+if(ScaleNo == 1)
+ {
+  scale_channel = SCALE_CHANNEL1;
+  scale_number  = SCALE_NUMBER1;
+  BulkCutoff = WP.BulkCutoff1;
+ } 
+ 
+ if(ScaleNo == 2)
+ {
+  scale_channel = SCALE_CHANNEL2;
+  scale_number  = SCALE_NUMBER2;
+  BulkCutoff = WP.BulkCutoff2;
+ }
+
+
+
+if(WP.TopUpOFFTime > 0) BulkDuration = WP.TopUpOFFTime / 2;
+else                    BulkDuration = 1.5 / 2;
+if(WP.TopUpONTime > 0)  DribbleDuration = WP.TopUpONTime / 2;
+else                    DribbleDuration = 2.5 / 2;
+
+if(WP.BulkCutoff1 > 0)   BulkCO1 = WP.BulkCutoff1;                
+else                    BulkCO1 = TargetWeight[Scale1] * 0.75;
+
+BulkM1 = (BulkCO1*UnitIQtoADM) / BulkDuration;
+BulkB1 = 0;
+DribbleM1 = ((TargetWeight[Scale1] - BulkCO1)*UnitIQtoADM) / DribbleDuration;
+DribbleB1 = BulkCO1*UnitIQtoADM;
+
+BulkFormula = concat(string(BulkM1)," * t + ",string(BulkB1));
+DribbleFormula = concat(string(DribbleM1)," * t + ",string(DribbleB1));
+
+if(WP.BulkCutoff2 > 0)   BulkCO2 = WP.BulkCutoff2;                
+else                    BulkCO2 = TargetWeight[Scale2] * 0.75;
+
+BulkM2 = (BulkCO2*UnitIQtoADM) / BulkDuration;
+BulkB2 = 0;
+DribbleM2 = ((TargetWeight[Scale2] - BulkCO2)*UnitIQtoADM) / DribbleDuration;
+DribbleB2 = BulkCO2*UnitIQtoADM;
+
+BulkFormula = concat(string(BulkM2)," * t + ",string(BulkB2));
+DribbleFormula = concat(string(DribbleM2)," * t + ",string(DribbleB2));
+  
+     iQSimFeedProg = concat
+       (
+        iQSimFormatProgram (BulkFormula, BulkDuration), ":",
+        iQSimFormatProgram (DribbleFormula, DribbleDuration)
+       );
+     iQSimSetProgram (scale_channel, scale_number, iQSimFeedProg);
+     iQSimSetWeight(scale_channel, scale_number,(TargetWeight[ScaleNo-1]*UnitIQtoADM));
+     iQSimStartProgram (scale_channel, scale_number);
+                 
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : iQSimDischarge
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Prepare and Start Simulated Weight for Discharge
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void iQSimDischarge(int ScaleNo)
+{
+decimal DischDuration%4.2;
+decimal DischM%6.3,DischB%6.2;
+string DischFormula[64];
+int scale_channel,scale_number;
+
+if(ScaleNo == 1)
+ {
+  scale_channel = SCALE_CHANNEL1;
+  scale_number  = SCALE_NUMBER1;
+ } 
+ 
+ if(ScaleNo == 2)
+ {
+  scale_channel = SCALE_CHANNEL2;
+  scale_number  = SCALE_NUMBER2;
+ }
+ 
+DischDuration = WP.DischargeTime;
+DischM = 0 - (TargetWeight[ScaleNo-1]*UnitIQtoADM / DischDuration);
+DischB = TargetWeight[ScaleNo-1]*UnitIQtoADM;
+
+DischFormula = concat(string(DischM)," * t + ",string(DischB));
+  
+     iQSimDischProg = concat
+       (
+        iQSimFormatProgram (DischFormula, DischDuration)
+       );
+     iQSimSetProgram (scale_channel, scale_number, iQSimDischProg);
+     iQSimSetWeight(scale_channel, scale_number,0.0);
+     iQSimStartProgram (scale_channel, scale_number);
+                 
+}
+                 
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : WeighPerUnit
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Manage Weighing Data
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void WeighPerUnit(int ScaleNo)
+{
+ if(UnitCompleted) UnitCompleted = OFF;
+ 
+ WeighPerUnitAcc++;
+ if(WP.WeighmentsPerUnit == 1 || WeighPerUnitAcc >= (WP.WeighmentsPerUnit-1))
+  StopForUnit[ScaleNo-1] = ON;
+ else
+  StopForUnit[ScaleNo-1] = OFF;
+   
+ if(WeighPerUnitAcc >= WP.WeighmentsPerUnit || ((CleanoutWeighment[Scale1] || !Scale1ON) && (CleanoutWeighment[Scale2] || !Scale2ON)))
+  {
+   WeighPerUnitDone = ON;
+   
+  }
+  
+ if(WeighPerUnitDone)
+          {
+           ProdTotalUnitsCnt[ScaleNo-1]++;
+           ProdTotalUnitsLT++;
+           if(Batch.Preset > 0)
+            {
+             Batch.UnitsDone++;
+             Batch.Count++;
+             if(BatchEndReq) 
+               BatchCancelled = ON;
+            } 
+           
+           if(WP.CountAll)
+            { 
+             ProdAcceptUnitCnt[ScaleNo-1] =  ProdTotalUnitsCnt[ScaleNo-1];
+             if(Batch.Preset > 0)Batch.UnitsAccepted = Batch.UnitsDone;
+            } 
+           else
+            {           
+             ProdAcceptUnitCnt[ScaleNo-1] =  ProdTotalUnitsCnt[ScaleNo-1] - (ProdUnderWeightCnt[ScaleNo-1] + ProdOverWeightCnt[ScaleNo-1]);
+             if(Batch.Preset > 0)Batch.UnitsAccepted = Batch.UnitsDone - (Batch.UnderWeightCnt + Batch.OverWeightCnt);
+            } 
+          }
+          
+        
+       RefreshReportScreenReq();
+       RefreshAutoScreenReq();
+       if(Batch.Preset > 0)
+        {
+         SaveBatchFlag = Execute;
+         RefreshBatchScreenReq();
+        } 
+       
+       PreSave_DataNoResetFlag = Execute;
+       ProdDataReadyNo = ScaleNo;
+       ProdDataReadyPLC = ON;
+       WeighPerUnitSaveFlag = Execute;
+          
+} 
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : KickerCheck
+--  Created by        : Steve Santerre 
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Positionning of Actuator
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+bool KickerCheck(void)
+{
+bool NoBag,Retracted;
+  if(IO_Enable[I_BagAtKicker])
+   {
+    if(Input_State(I_BagAtKicker))
+    {
+     NoBag = OFF;
+     MessageDisplay(lsub(TX_MSGBAGSTILLATKICKER),Step_Message,1);
+    }
+    else NoBag = ON;
+   }
+  else NoBag = ON; 
+ 
+  if(IO_Enable[I_KickerRetracted])
+   {
+    if(!Input_State(I_KickerRetracted))
+    {
+     Retracted = OFF;
+     MessageDisplay(lsub(TX_MSGBKICKERNOTRETRACTED),Step_Message,1);
+    }
+    else Retracted = ON;
+   }
+  else Retracted = ON;
+
+return(NoBag && Retracted);
+}
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : BulkCutoffCorrection
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/04
+--  
+--  Purpose           : This function is called to Calculate Bulk Cutoff
+--                      base on desired Dribble Time & correction
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+ void BulkCutoffCorrection(int ScaleNo)
+ {
+  float TimeDiff,TimePct,BulkCorrection;
+  
+  //Bulk Cutoff correction only if Dribble time is between 75% and 125% of Desired time)
+  if(ProdDribbleDuration[ScaleNo-1] >= (WP.DFTime * 0.75) && ProdDribbleDuration[ScaleNo-1] <= (WP.DFTime * 1.25))
+   {
+     TimeDiff = ProdDribbleDuration[ScaleNo-1] - WP.DFTime; //+ if dribble too long
+     TimePct = TimeDiff/WP.DFTime;
+     BulkCorrection = (MP.DFWeightCorr/100) * TimePct;
+     if(ScaleNo == 1)
+     {
+      WP.BulkCutoff1 = WP.BulkCutoff1 *(1 + BulkCorrection);
+      WP.BulkCutoff1 = Lim((TargetWeight[Scale1] - WP.Cutoff1),TargetWeight[Scale1],WP.BulkCutoff1);
+     }
+     
+     if(ScaleNo == 2)
+     {
+      WP.BulkCutoff2 = WP.BulkCutoff2 *(1 + BulkCorrection);
+      WP.BulkCutoff2 = Lim((TargetWeight[Scale2] - WP.Cutoff2),TargetWeight[Scale2],WP.BulkCutoff2);
+     }
+      
+     SaveWPFlag = Execute;
+     RefreshWPScreen_No = SCREEN_RECIPE1;
+   }  
+
+ }
+ 
+ 
+ /*------------------------------------------------------------------------- 
+--  Procedure Name    : CutoffCorrection
+--  Created by        : Steve Santerre
+--  Last modified on  : 2016/02
+--  
+--  Purpose           : This function is called to Calculate Cutoff
+--                      based on desired correction
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+ void CutoffCorrection(int ScaleNo)
+ {
+ float tempo,tempo1,tempo2,min,max; 
+ float tempo3;
+ 
+ if(!MP.CorrOnAverage) tempo1 = (TargetWeight[ScaleNo-1] - CorrWeight[ScaleNo-1]);
+ else 
+     {
+      SumCheckedWeight[ScaleNo-1] = SumCheckedWeight[ScaleNo-1] + CorrWeight[ScaleNo-1];
+      NbrCheckedWeight[ScaleNo-1] ++;
+      AvgCheckedWeight[ScaleNo-1] = SumCheckedWeight[ScaleNo-1] / NbrCheckedWeight[ScaleNo-1];
+      tempo1 = 0;
+     
+      if(LastCheckedWeight[ScaleNo-1]) 
+        {
+           tempo1 = TargetWeight[ScaleNo-1] - AvgCheckedWeight[ScaleNo-1];
+           AvgCheckedWeight[ScaleNo-1] = 0;
+           SumCheckedWeight[ScaleNo-1] = 0;
+           NbrCheckedWeight[ScaleNo-1] = 0;
+           LastCheckedWeight[ScaleNo-1] = OFF; 
+        }
+     }
+ tempo2 = (MP.CutoffCorr/100);
+ tempo =  tempo1 * tempo2;
+ min = (((100.0 - MP.CutoffCorrLimit)/100)* WP.NominalWeight);
+ max = (((100.0 + MP.CutoffCorrLimit)/100)* WP.NominalWeight);
+ if(ScaleNo == 1)
+  {
+   tempo3 = Lim(min, max,(WP.Cutoff1+tempo));
+   CutoffCorrOffset[Scale1]= (WP.Cutoff1+CutoffCorrOffset[Scale1]) - tempo3;
+  }
+ 
+ if(ScaleNo == 2)
+  {
+   tempo3 = Lim(min, max,(WP.Cutoff2+tempo));
+   CutoffCorrOffset[Scale2]= (WP.Cutoff2+CutoffCorrOffset[Scale2]) - tempo3;
+  }
+    
+ RefreshWPScreen_No = SCREEN_RECIPE1;
+ }
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Var_Init_Cycle
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/28
+--  
+--  Purpose           : Variables to be Initialize Each Weighing Cycle
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void VarInitCycle(bool InCycle)
+{
+
+ if(!InCycle)
+ {
+  CheckOIML();
+
+  ZeroFreqVal = MP.ZeroFreq * MP.SampleFreq;
+  
+  T_PRE[T_StabTimeLimit]=MP.StabTimeLimit;
+  T_PRE[T_StabTimeLimit2]=MP.StabTimeLimit;
+  T_PRE[T_DribbleBlankT] = MC.DribBlankT;
+  T_PRE[T_DribbleBlankT2] = MC.DribBlankT;
+  T_PRE[T_OutOfTolTime]=MP.OutOfTolTime;
+  T_PRE[T_OutOfTolTime2]=MP.OutOfTolTime;
+  T_PRE[T_CatchGateMaxTime]=MP.CatchGateMaxTime;
+  T_PRE[T_CatchGateMaxTime2]=MP.CatchGateMaxTime;
+  T_PRE[T_DischDoorMaxTime] = MP.DischDoorMaxTime;
+  T_PRE[T_DischDoorMaxTime2] = MP.DischDoorMaxTime;
+  T_PRE[T_SlowCycleTime] = MP.SlowCycleTime;
+  T_PRE[T_SlowCycleTime2] = MP.SlowCycleTime;
+  T_PRE[T_DischReqDebouncing] = MC.DischReqDebouncing;
+  T_PRE[T_BagDetectionTime] = MP.BagDetectionTime;
+  T_PRE[T_RefillingTimeT] = MC.RefillingTimeT;
+  T_PRE[T_LowLevelDebounce] = MC.LowLevelDebounceT;
+  T_PRE[T_LowLevelDebounce2] = MC.LowLevelDebounceT;
+
+ } 
+ 
+  if (ZeroFreqCnt[Scale1] >= ZeroFreqVal)     ZeroFreqCnt[Scale1]=0;
+  if (SampleFreqCnt[Scale1] >= MP.SampleFreq) SampleFreqCnt[Scale1]=0;
+  if (ZeroFreqCnt[Scale2] >= ZeroFreqVal)     ZeroFreqCnt[Scale2]=0;
+  if (SampleFreqCnt[Scale2] >= MP.SampleFreq) SampleFreqCnt[Scale2]=0;
+
+  T_PRE[T_TopUpONTime]=WP.TopUpONTime;
+  T_PRE[T_TopUpOFFTime]=WP.TopUpOFFTime;
+  T_PRE[T_TopUpONTime2]=WP.TopUpONTime;
+  T_PRE[T_TopUpOFFTime2]=WP.TopUpOFFTime;
+  T_PRE[T_DischargeTime]=WP.DischargeTime;
+  T_PRE[T_DischargeTime2]=WP.DischargeTime;
+  T_PRE[T_FeedDelayTime]=WP.FeedDelayTime;
+  T_PRE[T_FeedDelayTime2]=WP.FeedDelayTime;
+  T_PRE[T_FallingTime] = WP.FallingTime;
+  T_PRE[T_BagInflationTime] = WP.BagInflationTime;
+  T_PRE[T_KnockningTime] = WP.KnockningTime;
+  T_PRE[T_CatchGateDelay] = WP.CatchGateDelay;
+  T_PRE[T_CatchGateDelay2] = WP.CatchGateDelay;
+  T_PRE[T_KickerCenterTime] = WP.KickerCenterTime;
+  T_PRE[T_KickerActivateTime] = WP.KickerActivateTime;
+  T_PRE[T_VibrationPeriod]  = WP.VibrationPeriod;
+  T_PRE[T_VibrationPeriod2] = WP.VibrationPeriod;
+
+  FlexIO_SetTPresetsFlag = Execute;
+  Reset_FlexIOFlag = Execute;
+
+  if(LowLevel[Scale1] && WP.FeedAlgoType != FeediQSim) 
+  {
+   ZeroFreqCnt[Scale1] = 0;
+   SampleFreqCnt[Scale1] = 0;
+  }
+
+  if(LowLevel[Scale2] && WP.FeedAlgoType != FeediQSim) 
+  {
+   ZeroFreqCnt[Scale2] = 0;
+   SampleFreqCnt[Scale2] = 0;
+  }
+ 
+  if(MC.FeederType == FeederGHS && (WP.FeedAlgoType == FeedStd || WP.FeedAlgoType == FeediQSim) && WP.VibrationAmplitude > 0 && WP.VibrationPeriod > 0)
+   {
+      VibrationEnabled = ON;
+   }
+ else
+   {
+      VibrationEnabled = OFF;
+   }
+  
+ ContOutIntervalTime = 1/float(Lim(1,10,MC.ContRate)); //ContRate = no of times per second (1-10) 
+
+ RefreshGrayoutFlag = ON;
+
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Var_Init_OFF_Mode
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/28
+--  
+--  Purpose           : Variables to be Initialize In Off Mode
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void VarInitOff(void)
+{
+int i,j;
+ZeroFreqCnt[Scale1] = 0;
+SampleFreqCnt[Scale1] = 0;
+ZeroFreqCnt[Scale2] = 0;
+SampleFreqCnt[Scale2] = 0;
+CleanoutWeighment[Scale1] = OFF;
+CleanoutWeighment[Scale2] = OFF;
+IsCleanoutDone[Scale1] = OFF;
+IsCleanoutDone[Scale2] = OFF;
+LastCheckedWeight[Scale1] = OFF;
+AvgCheckedWeight[Scale1] = 0;
+SumCheckedWeight[Scale1] = 0;
+NbrCheckedWeight[Scale1] = 0;
+LastCheckedWeight[Scale2] = OFF;
+AvgCheckedWeight[Scale2] = 0;
+SumCheckedWeight[Scale2] = 0;
+NbrCheckedWeight[Scale2] = 0;
+ProdCycleUnitsPerMin = 0;
+FirstWeighment[Scale1]=ON;
+FirstWeighment[Scale2]=ON;
+KnockHammerFlag=OFF;
+iQFeedWaitSettled[Scale1] = OFF;
+iQFeedWaitSettled[Scale2] = OFF;
+EmtpyBagReadyMem = ON;
+
+
+OutReset();
+if(Fault_Type[FLT_GEN] == 0) FaultResetReq();
+  
+for(I=1;I<TMAX;I++) T_EnOff(I);
+
+if(WP.FeedAlgoType == FeedStd || WP.FeedAlgoType == FeediQSim)
+
+if(ScaleStatus[Scale1]!= 11 && ScaleStatus[Scale1]!= 14 && ScaleStatus[Scale1] < 24)
+{
+ ClearComparators(1);
+}
+
+if(ScaleStatus[Scale2]!= 11 && ScaleStatus[Scale2]!= 14 && ScaleStatus[Scale2] < 24)
+{
+ ClearComparators(2);
+}
+
+#ifndef __SIMULATION__
+  if(WP.FeedAlgoType == FeediQSim)
+   { 
+    iQSimOpen(SCALE_CHANNEL1, SCALE_NUMBER1,"127.0.0.1");
+    iQSimOpen(SCALE_CHANNEL2, SCALE_NUMBER2,"127.0.0.1");
+   }
+  else
+   {
+    iQSimClose(SCALE_CHANNEL1, SCALE_NUMBER1);
+    iQSimClose(SCALE_CHANNEL2, SCALE_NUMBER2);
+   }
+#endif
+  
+   
+if(WP.FeedAlgoType != FeedStd && WP.FeedAlgoType != FeediQSim)
+{
+FeedingStop(1);
+FeedingStop(2);
+GetFillingData(ON);
+}
+InitiQSmart[Scale1] = ON;
+InitiQFlash[Scale1] = ON;
+
+if(SeqModeManager == stp_OFF_MODE)
+{
+SeqMaster=stp_INIT;Seq2Master=stp_INIT;
+SeqSpout=stp_INIT;
+SeqWeighPan=stp_INIT;Seq2WeighPan=stp_INIT;
+SeqFeeder=stp_INIT;Seq2Feeder=stp_INIT;
+SeqFeedSTD=stp_INIT;Seq2FeedSTD=stp_INIT;
+SeqManDischarge = stp_INIT;Seq2ManDischarge = stp_INIT;
+ManualModeStep = stp_INIT;
+
+Hopper_State = HopperFill;
+Discharge_State[Scale1] = DischMan;
+Discharge_State[Scale2] = DischMan;
+
+CheckWeight_State = ReleaseWeight;
+}
+
+T_PRE[T_BagRelease]=0.50;
+T_PRE[T_BulkDuration]=99.99;
+T_PRE[T_DribbleDuration]=99.99;
+T_PRE[T_CycleDuration]=999.99;
+T_PRE[T_BulkDuration2]=99.99;
+T_PRE[T_DribbleDuration2]=99.99;
+T_PRE[T_CycleDuration2]=999.99;
+T_PRE[T_StreamRegHigh]=0.7;
+T_PRE[T_StreamRegHigh2]=0.7;
+T_PRE[T_UPMDuration]= 6000.0;
+T_PRE[T_FaultDisplay] = 3.0;
+T_PRE[T_FaultDisplay2] = 3.0;
+T_PRE[T_ActuatorON] = 0.3;
+T_PRE[T_ActuatorOFF] = 0.15;
+T_PRE[T_ActuatorON2] = 0.3;
+T_PRE[T_ActuatorOFF2] = 0.15;
+
+}
+
+ 
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Low Level
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/28
+--  
+--  Purpose           : Variables to Set Low Level
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void LowLevelStatus(void)
+{
+ bool LowLevelMem[2];
+
+ if(!IOTestFlag)  // && SeqModeManager!= stp_OFF_MODE)
+ {
+  if(!Input_State(I_LowLevelSensor1))
+   { 
+    //LowLevel is ON when Input is OFF                            
+    if(MC.LowLevelDebounceT>0 && !T_EN[T_LowLevelDebounce]) T_EnOn(T_LowLevelDebounce);
+    if(MC.LowLevelDebounceT<=0 ||T_Dn(T_LowLevelDebounce))  
+    {
+     LowLevel[Scale1]=ON;
+     Output_ON(O_LowLevel1);
+    } 
+   } 
+   
+  else 
+  {    
+   LowLevel[Scale1]=OFF;
+   Output_OFF(O_LowLevel1);
+   if(T_EN[T_LowLevelDebounce]) T_EnOff(T_LowLevelDebounce);
+  }
+  
+  if((IO_Enable[I_LowLevelSensor2] && !Input_State(I_LowLevelSensor2)) || (!IO_Enable[I_LowLevelSensor2] && !Input_State(I_LowLevelSensor1)))
+   { 
+    //LowLevel is ON when Input is OFF                            
+    if(MC.LowLevelDebounceT>0 && !T_EN[T_LowLevelDebounce2]) T_EnOn(T_LowLevelDebounce2);
+    if(MC.LowLevelDebounceT<=0 ||T_Dn(T_LowLevelDebounce2))  
+    {
+     LowLevel[Scale2]=ON;
+     Output_ON(O_LowLevel2);
+    } 
+   } 
+   
+  else 
+  {    
+   LowLevel[Scale2]=OFF;
+   Output_OFF(O_LowLevel2);
+   if(T_EN[T_LowLevelDebounce2]) T_EnOff(T_LowLevelDebounce2);
+  }
+  
+  if(LowLevelMem[Scale1] != LowLevel[Scale1] || LowLevelMem[Scale2] != LowLevel[Scale2])
+   {
+    ButtonDisplayRefreshed[SCREEN_AUTOMATIC]= OFF;
+    LowLevelMem[Scale1] = LowLevel[Scale1];
+    LowLevelMem[Scale2] = LowLevel[Scale2];
+   }  
+
+ }
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Fault Monitor
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/28
+--  
+--  Purpose           : Variables to Set Low Level
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void FaultMonitor(void)
+{
+ 
+  if(T_Dn(T_FirstScan))
+  {
+   //E-Stop Fault
+   
+   if (IO_Enable[I_EStop] && !Input_State(I_EStop) && !FaultState(FltG_EmergencyStop)) 
+       FaultHandler(FltG_EmergencyStop,"");
+       
+         
+   //Low Air pressure Fault
+   if (IO_Enable[I_PressureSW] && !Input_State(I_PressureSW) && !FaultState(FltG_LowAirPressure)) 
+        FaultHandler(FltG_LowAirPressure,"");
+    
+    //Catch Gate Not Open Fault
+    if (IO_Enable[I_CatchGateOpen1])
+    {
+     if(IO_State[O_CatchGate1])
+     { 
+      if(!Input_State(I_CatchGateOpen1)|| CatchGateAlreadyOpen)
+       {
+       if (!T_EN[T_CatchGateMaxTime])
+          {
+          T_EnOn(T_CatchGateMaxTime);
+          }
+          
+          if(!FaultState(FltG_CatchGateNotOpen) && T_Dn(T_CatchGateMaxTime)|| CatchGateAlreadyOpen) 
+            {
+            FaultHandler(FltG_CatchGateNotOpen,"");
+            T_EnOff(T_CatchGateMaxTime);
+            }
+       }
+     }
+      else  T_EnOff(T_CatchGateMaxTime);      
+    }
+  
+
+    //Catch Gate Not Open Fault #2
+    if (IO_Enable[I_CatchGateOpen2])
+    {
+     if(IO_State[O_CatchGate2])
+     { 
+       if(!Input_State(I_CatchGateOpen2)|| CatchGateAlreadyOpen2)
+       {
+          if (!T_EN[T_CatchGateMaxTime2])
+          {
+            T_EnOn(T_CatchGateMaxTime2);
+          }
+          
+          if(!FaultState(FltG_CatchGateNotOpen2) && T_Dn(T_CatchGateMaxTime2)|| CatchGateAlreadyOpen2) 
+          {
+            FaultHandler(FltG_CatchGateNotOpen2,"");
+            T_EnOff(T_CatchGateMaxTime2);
+          }
+       }
+     }
+      else  T_EnOff(T_CatchGateMaxTime2);      
+     }
+     
+    //Discharge Door Not Closed Fault
+    if (IO_Enable[I_DischDoorClose1])
+    {    
+      if((!Input_State(I_DischDoorClose1) || DischDoorStillClose) && !IO_State[O_DischDoor1])
+      {
+       if(!FaultState(FltG_DischDoorNotClosed))
+       {
+         if(!T_EN[T_DischDoorMaxTime]&& MP.DischDoorMaxTime!=0) 
+           T_EnOn(T_DischDoorMaxTime);
+         if(T_Dn(T_DischDoorMaxTime)||MP.DischDoorMaxTime==0 || DischDoorStillClose) 
+         {
+          FaultHandler(FltG_DischDoorNotClosed,"");
+          T_EnOff(T_DischDoorMaxTime);
+          DischDoorStillClose = OFF;
+         }
+       }
+      } 
+      else if(T_EN[T_DischDoorMaxTime])
+      { 
+       T_EnOff(T_DischDoorMaxTime);
+      } 
+    }
+    
+    //Discharge Door Not Closed Fault #2
+    if (IO_Enable[I_DischDoorClose2])
+    {  
+     if((!Input_State(I_DischDoorClose2) || DischDoorStillClose2) && !IO_State[O_DischDoor2])
+      {
+       if(!FaultState(FltG_DischDoorNotClosed2))
+       {
+        if(!T_EN[T_DischDoorMaxTime2]&& MP.DischDoorMaxTime!=0) 
+         T_EnOn(T_DischDoorMaxTime2);
+        if(T_Dn(T_DischDoorMaxTime2)||MP.DischDoorMaxTime==0 || DischDoorStillClose2) 
+         {
+          FaultHandler(FltG_DischDoorNotClosed2,"");
+          T_EnOff(T_DischDoorMaxTime2);
+          DischDoorStillClose2 = OFF;
+         }
+       }
+      } 
+      else if(T_EN[T_DischDoorMaxTime2])
+      { 
+       T_EnOff(T_DischDoorMaxTime2);
+      } 
+    }
+
+    //Exceeded Capacity Fault 
+    if(SeqModeManager==stp_OFF_MODE || SeqModeManager==stp_MANUAL_MODE)
+    {
+     if ((NetWeight[Scale1] > MaxWeight[Scale1]) && !FaultState(FltB_ExceededCapacity))
+        {
+         FaultHandler(FltB_ExceededCapacity,"");
+        }
+     if ((NetWeight[Scale2] > MaxWeight[Scale2]) && !FaultState(FltB_ExceededCapacity2))
+        {
+         FaultHandler(FltB_ExceededCapacity2,"");
+        }   
+    }    
+    else
+    {
+      if ((NetWeight[Scale1] > MaxWeight[Scale1]) && !FaultState(FltG_ExceededCapacity))
+        {
+         FaultHandler(FltG_ExceededCapacity,"");
+        }
+      if ((NetWeight[Scale2] > MaxWeight[Scale2]) && !FaultState(FltG_ExceededCapacity2))
+        {
+         FaultHandler(FltG_ExceededCapacity2,"");
+        }  
+    }
+    
+    //Motor Failure Fault   
+    if (IO_Enable[I_MotorFailure] && !Input_State(I_MotorFailure) && !FaultState(FltG_MotorFailure))
+         FaultHandler(FltG_MotorFailure,"");
+   
+   //Discharge Too Long
+   // FltB_DischargeTooLong not used
+   
+   //Low Battery
+   //FltW_LowBattery not used
+   
+   //Slow cycle Fault
+   if((SeqMaster == stp_FEED && !CycleInHoldMem[Scale1])|| SeqMaster == stp_TOPUP)
+     {
+     if (!FaultState(FltW_SlowCycle))
+     {
+     if(T_PRE[T_SlowCycleTime]!= 0 && !T_EN[T_SlowCycleTime]) T_EnOn(T_SlowCycleTime);
+     if((T_Dn(T_SlowCycleTime) || T_PRE[T_SlowCycleTime] == 0)) 
+        {        
+        FaultHandler(FltW_SlowCycle,"");
+        T_EnOff(T_SlowCycleTime);
+        SlowCycleOccured[Scale1] = ON;
+        if(EmptyHopper && LowLevel[Scale1])
+         {
+          IsCleanoutDone[Scale1] = ON;
+          Output_ON(O_CleanoutCompleted1);
+         }
+             
+        }
+      
+     }
+     else if(!SlowCycleMem[Scale1]) 
+      {
+       SlowCycleMem[Scale1]=ON;
+       CheckOnce[Scale1] = ON;
+       Discharge_State[Scale1] = DischPanOn;
+      }
+     }
+             
+   else
+   { 
+    if(FaultState(FltW_SlowCycle)||T_EN[T_SlowCycleTime])
+     if(!Fault_Type[FLT_GEN] && !Fault_Type[FLT_BLK] && !Fault_Type[FLT_STOP]) 
+     {
+     T_EnOff(T_SlowCycleTime);
+     FaultResetReq();
+     }
+     
+     if(SlowCycleMem[Scale1]) 
+      {
+      SlowCycleMem[Scale1]=OFF;
+      } 
+   }
+   
+   //Slow cycle Fault #2
+   if((Seq2Master == stp_FEED && !CycleInHoldMem[Scale2])|| Seq2Master == stp_TOPUP)
+     {
+     if (!FaultState(FltW_SlowCycle2))
+     {
+     if(T_PRE[T_SlowCycleTime2]!= 0 && !T_EN[T_SlowCycleTime2]) T_EnOn(T_SlowCycleTime2);
+     if((T_Dn(T_SlowCycleTime2) || T_PRE[T_SlowCycleTime2] == 0)) 
+        {        
+        FaultHandler(FltW_SlowCycle2,"");
+        T_EnOff(T_SlowCycleTime2);
+        SlowCycleOccured[Scale2] = ON;
+        if(EmptyHopper && LowLevel[Scale2])
+         {
+          IsCleanoutDone[Scale2] = ON;
+          Output_ON(O_CleanoutCompleted2);
+         } 
+        }
+      
+     }
+     else if(!SlowCycleMem[Scale2]) 
+      {
+       SlowCycleMem[Scale2]=ON;
+       CheckOnce[Scale2] = ON;
+       Discharge_State[Scale2] = DischPanOn;
+      }
+     }
+             
+   else
+   { 
+    if(FaultState(FltW_SlowCycle2)||T_EN[T_SlowCycleTime2])
+     if(!Fault_Type[FLT_GEN] && !Fault_Type[FLT_BLK] && !Fault_Type[FLT_STOP]) 
+     {
+     T_EnOff(T_SlowCycleTime2);
+     FaultResetReq();
+     }
+     
+     if(SlowCycleMem[Scale2]) 
+      {
+      SlowCycleMem[Scale2]=OFF;
+      } 
+   }
+   
+  
+  //Clear Fault Input
+  if(IO_Enable[I_ClearFaults] && Input_State(I_ClearFaults) && !I_ClearFaultsMem)
+    {
+     I_ClearFaultsMem = ON;
+     if(Fault_Type[FLT_GEN]||Fault_Type[FLT_BLK]||Fault_Type[FLT_STOP]||Fault_Type[FLT_WRN])FaultResetReq();
+     if(OutOfTol[Scale1])DischargeHMI1=ON;
+     if(OutOfTol[Scale2])DischargeHMI2=ON;
+    }
+    
+  if(IO_Enable[I_ClearFaults] && !Input_State(I_ClearFaults) && I_ClearFaultsMem) I_ClearFaultsMem =OFF;                    
+ 
+  if(Fault_Type[FLT_GEN] && OutResetFlag != Execute) 
+   OutResetFlag = Execute;
+  
+  }         
+}
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : WeighingDataRefresh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Production Report Values Refresh
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void WeighingDataRefresh(int ScaleNo)
+{
+double ValueToSqrt,ProdTotalWeightTemp;
+double SumWeightTemp,AvgWeightTemp,SqareSumWeightTemp,StdDevTemp;
+bool ValueNegFlag;
+string weighingdata_weight[12];
+float CutoffTemp;
+  
+        if(ScaleNo == 1)
+        {
+         SumWeightTemp      = SumWeight1;
+         AvgWeightTemp      = AvgWeight1;
+         SqareSumWeightTemp = SqareSumWeight1;
+         StdDevTemp         = StdDev1;
+         CutoffTemp         = WP.Cutoff1-CutoffCorrOffset[Scale1];
+        } 
+        if(ScaleNo == 2)
+        {
+         SumWeightTemp      = SumWeight2;
+         AvgWeightTemp      = AvgWeight2;
+         SqareSumWeightTemp = SqareSumWeight2;
+         StdDevTemp         = StdDev2;
+         CutoffTemp         = WP.Cutoff2-CutoffCorrOffset[Scale2];
+        }
+
+ if(WeightSampled[ScaleNo-1] && !LowLevel[ScaleNo-1] && !WeighmentAborted[ScaleNo-1] && SqareSumWeightTemp<2000000000)
+  {
+  NbrChecked[ScaleNo-1]++; 
+  SumWeightTemp = SumWeightTemp + CheckedWeight[ScaleNo-1];
+  AvgWeightTemp = SumWeightTemp/NbrChecked[ScaleNo-1];
+  SqareSumWeightTemp = SqareSumWeightTemp + (CheckedWeight[ScaleNo-1]*CheckedWeight[ScaleNo-1]);
+  
+  //Excel StdevP Formula (entire population)
+  ValueToSqrt = (SqareSumWeightTemp - (NbrChecked[ScaleNo-1]*(AvgWeightTemp*AvgWeightTemp)))/NbrChecked[ScaleNo-1];
+  StdDevTemp = sqrt(ValueToSqrt);
+  }
+  
+  if((NbrChecked[ScaleNo-1] > 2 && (AvgWeightTemp < (WP.NominalWeight*0.75)) || (AvgWeightTemp > (WP.NominalWeight*1.25)))
+    || NbrChecked[ScaleNo-1] < 0)  //SADM2
+    {
+     ResetData(ON);
+    } 
+
+
+        if(ScaleNo == 1)
+        {
+         ProdTotalWeightTemp = ProdTotalWeight1;
+        } 
+        if(ScaleNo == 2)
+        {
+        ProdTotalWeightTemp = ProdTotalWeight2;
+        }
+ 
+       ProdLastTolerance[ScaleNo-1] = "=";
+       if(ProdUnderWeightFlag[ScaleNo-1])
+        {
+         ProdUnderWeightCnt[ScaleNo-1]++;
+         if(Batch.Preset > 0)Batch.UnderWeightCnt++;
+         ProdLastTolerance[ScaleNo-1] = "-";
+         ProdUnderWeightFlag[ScaleNo-1]=OFF;
+        }
+       if(ProdOverWeightFlag[ScaleNo-1])
+        {
+         ProdOverWeightCnt[ScaleNo-1]++;
+         if(Batch.Preset > 0)Batch.OverWeightCnt++;
+         ProdLastTolerance[ScaleNo-1] = "+";
+         ProdOverWeightFlag[ScaleNo-1]=OFF;
+        }
+       
+       
+       
+       ProdLastChecked[ScaleNo-1] = CheckedWeight[ScaleNo-1];
+       ProdAvgWeight[ScaleNo-1] = AvgWeightTemp;
+       
+       if(Batch.Preset > 0)
+       { 
+         if(CheckedWeight[ScaleNo-1] < Batch.MinAccepted || Batch.MinAccepted == 0) 
+          Batch.MinAccepted = CheckedWeight[ScaleNo-1];
+       
+         if(CheckedWeight[ScaleNo-1] > Batch.MaxAccepted || Batch.MaxAccepted == 0) 
+          Batch.MaxAccepted = CheckedWeight[ScaleNo-1];
+       }  
+       
+       if(Batch.Preset > 0 && WeighmentAborted[ScaleNo-1])  Batch.Residue = Batch.Residue + CheckedWeight[ScaleNo-1];
+       
+       ProdStdDev[ScaleNo-1] = StdDevTemp;
+       
+       if(ScaleNo == 1)
+        {
+         SumWeight1      = SumWeightTemp;
+         AvgWeight1      = AvgWeightTemp;
+         SqareSumWeight1 = SqareSumWeightTemp;
+         StdDev1         = StdDevTemp;
+        } 
+        if(ScaleNo == 2)
+        {
+         SumWeight2       = SumWeightTemp;
+         AvgWeight2       = AvgWeightTemp;
+         SqareSumWeight2  = SqareSumWeightTemp;
+         StdDev2          = StdDevTemp;
+        }
+        
+       if(Batch.Preset > 0)
+        {
+         switch(WP.EnabledScale)
+          {
+           case Scale1Only: 
+             Batch.StdDev = StdDev1;
+             Batch.Avg = AvgWeight1;
+             break;
+           case Scale2Only: 
+             Batch.StdDev = StdDev2;
+             Batch.Avg = AvgWeight2;
+             break; 
+           case Scale1And2: 
+             Batch.StdDev = (StdDev1+StdDev2)/2;
+             Batch.Avg = (AvgWeight1 + AvgWeight2)/2;
+             break;
+          }
+        }
+        
+               
+       ProdTotalWeighmentsLT++;
+       
+       //Correction of Cutoffs values
+       if(WP.FeedAlgoType == FeedStd  && !WeighmentAborted[ScaleNo-1] && !SlowCycleOccured[ScaleNo-1] && !LowLevel[ScaleNo-1])
+       {
+        if(WeightSampled[ScaleNo-1])
+        {
+         if(MP.CutoffCorr > 0 && CorrWeight[ScaleNo-1] > CutoffTemp) 
+          {
+           CutoffCorrection(ScaleNo);
+          } 
+        }
+        else
+         if(WP.DFTime > 0 && MP.DFWeightCorr > 0 && !BulkOnTime)
+          if(WP.WeighmentsPerUnit == 1 || WeighPerUnitAcc <= (WP.WeighmentsPerUnit-1))
+          {
+            BulkCutoffCorrection(ScaleNo);
+          }
+       }
+       
+        
+       if(WeightSampled[ScaleNo-1])
+        {
+         ProdTotalWeightTemp = ProdTotalWeightTemp + CheckedWeight[ScaleNo-1];
+         if(Batch.Preset > 0)Batch.TotalWeight = Batch.TotalWeight + CheckedWeight[ScaleNo-1];
+         ProdTotalWeightLT = ProdTotalWeightLT + CheckedWeight[ScaleNo-1];
+         ProdLastWeight[ScaleNo-1] = ProdLastChecked[ScaleNo-1];
+         ProdLastSampled[ScaleNo-1] = ">o<";
+         weighingdata_weight = concat("c",adj(ProdLastWeight[ScaleNo-1],6,DP[ScaleNo-1]),WP.Unit);
+        }
+       
+       else
+        {
+         ProdTotalWeightTemp = ProdTotalWeightTemp + TargetWeight[ScaleNo-1];
+         if(Batch.Preset > 0)Batch.TotalWeight = Batch.TotalWeight + TargetWeight[ScaleNo-1];
+         ProdTotalWeightLT = ProdTotalWeightLT + TargetWeight[ScaleNo-1];
+         ProdLastWeight[ScaleNo-1] = TargetWeight[ScaleNo-1];
+         ProdLastSampled[ScaleNo-1] = "---";
+         weighingdata_weight = concat("u",adj(ProdLastWeight[ScaleNo-1],6,DP[ScaleNo-1]),WP.Unit);
+        }
+      
+       if(ScaleNo == 1)
+        {
+         ProdTotalWeight1 = ProdTotalWeightTemp;
+        } 
+        if(ScaleNo == 2)
+        {
+         ProdTotalWeight2 = ProdTotalWeightTemp;
+        }
+         
+       if(WP.FeedAlgoType == FeediQSmart)
+       {
+        if(ScaleNo == 1)
+        {
+         WP.BulkCutoff1 = FastCutoff[Scale1];
+         WP.Cutoff1 = SlowCutoff[Scale1];
+        } 
+        if(ScaleNo == 2)
+        {
+         WP.BulkCutoff2 = FastCutoff[Scale2];
+         WP.Cutoff2 = SlowCutoff[Scale2];
+        }
+        RefreshWPScreen_No = SCREEN_RECIPE1;
+       } 
+       
+       if(WP.FeedAlgoType == FeediQFlash)
+       {
+        if(ScaleNo == 1)
+        {
+         WP.BulkCutoff1 = TargetWeight[Scale1]-FastCutoff[Scale1];
+         WP.Cutoff1 = 0;
+        } 
+        if(ScaleNo == 2)
+        {
+         WP.BulkCutoff2 = TargetWeight[Scale2]-FastCutoff[Scale2];
+         WP.Cutoff2 = 0;
+        }
+        RefreshWPScreen_No = SCREEN_RECIPE1;
+       }
+   
+   
+       WeighingData_StringSource[ScaleNo-1] = concat(trim(ProdBulkDuration[ScaleNo-1]),"s",space(tab),trim(ProdDribbleDuration[ScaleNo-1]),"s",
+                                              space(tab-3),weighingdata_weight,space(tab-1),TimeString);
+                                              
+       WeightSampled[ScaleNo-1] = OFF;
+       
+              
+       //Formating Unit Record String (Ticket Info)
+       FileName_Date = getstddate();
+       Standard_Date = concat("20",FileName_Date);
+       
+       Standard_Time = getstdtime();
+       TicketInfo = concat("<;", MC.SerialNbr, ";","#",trim(string(ScaleNo)),";",trim(string(adj(TargetWeight[ScaleNo-1],7,2))), ";",WP.Unit, ";",
+                           trim(string(adj(ProdLastWeight[ScaleNo-1],7,2))), ";",ProdLastSampled[ScaleNo-1], ";",                            
+                           trim(string(adj(WP.UnderWeight,10,2))), ";",ProdLastTolerance[ScaleNo-1], ";",
+                           trim(string(adj(WP.OverWeight,10,2))), ";",trim(string(adj(ProdTotalUnitsCnt[ScaleNo-1],10,0))), ";",                                 
+                           trim(string(adj(WeighPerUnitAcc,5,0))),"/", trim(string(adj(WP.WeighmentsPerUnit,5,0))), ";",Standard_Time,";",Standard_Date, ";>", CRLF);
+                           
+              
+       fifo_write (FIFO_UNITREC_SHARED, TicketInfo, length (TicketInfo));
+       fifo_write (FIFO_UNITREC_USB,    TicketInfo, length (TicketInfo));  
+        
+
+       RefreshReportScreenReq();
+       RefreshAutoScreenReq();
+       RefreshWeighingDataPopup(ScaleNo);
+       
+       if(Batch.Preset > 0)
+        {
+         SaveBatchFlag = Execute;
+         RefreshBatchScreenReq();
+        } 
+       
+       PreSave_DataNoResetFlag = Execute;
+       if(SlowCycleOccured[ScaleNo-1]) SlowCycleOccured[ScaleNo-1] = OFF;
+       
+}
+
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : IN_Refresh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Refresh group of physical Digital Inputs and 
+--                      sets the IO_State 
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void IN_Refresh(void)
+{
+int i,InputRegTest1,InputRegTest2;
+
+if(MaxNumbOfIO > 31)
+{
+InputRegTest1 = pin(31,0); 
+InputRegTest2 = pin(MaxNumbOfIO,32);
+}
+else 
+{
+if(MaxNumbOfIO > 0 && MaxNumbOfIO <= 31)InputRegTest1 = pin(MaxNumbOfIO,0);
+InputRegTest2 = 0;
+}
+for(i=IO_IN_MIN;i<=IO_IN_MAX;i++)
+{
+    if(IO_Input[i]) //Inputs
+    { 
+        if (!IO_Enable[i]) IO_TestState[i] = OFF;
+        else if(IO_Address[i] <=31) IO_TestState[i] = bit(IO_Address[i],InputRegTest1);
+        else IO_TestState[i] = bit(IO_Address[i],InputRegTest2);
+    }
+
+}
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : IN_Refresh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Refresh group of physical Digital Inputs
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void IN_Refresh2(void)
+{
+
+if(MaxNumbOfIO > 31)
+{
+  InputReg1 = pin(31,0); 
+  InputReg2 = pin(MaxNumbOfIO,32);
+}
+else 
+{
+  if(MaxNumbOfIO > 0 && MaxNumbOfIO <= 31)InputReg1 = pin(MaxNumbOfIO,0);
+  InputReg2 = 0;
+}
+
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Force_Out
+--  Created by        : Jean-Pierre Doré
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Outputs set to OFF when accessing IO Test Output page
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      :  
+--                      
+--------------------------------------------------------------------------*/
+void Force_Out (void)
+{
+int i;
+ for(i=NUMBEROFINPUTS+1;i<=MAX_IO;i++)
+ {
+  if(IO_Enable[i] && IO_Address[i] <= MaxNumbOfIO)
+   {
+   if (IO_Force[i])  bout((IO_Address[(i)]),1);      
+   if (!IO_Force[i]) bout((IO_Address[(i)]),0);  
+   IO_TestState[i]=out((IO_Address[(i)]));
+   }
+ }  
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : OUT_Refresh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Refresh physical Digital Outputs
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : Feeder Outputs will also be refreshed with 
+--                      Feeding Instructions - RTCWin
+--------------------------------------------------------------------------*/
+void OUT_Refresh(void)
+{
+bool Bit31;
+int i,OutputRegTest1,OutputRegTest2;
+//int TempOutputs,TempOutputs2;
+
+OutputRegTest1 = 0;
+OutputRegTest2 = 0;
+
+for(i=IO_OUT_MIN;i<=IO_OUT_MAX;i++)
+{
+   
+    if(!IO_Input[i]) //Outputs
+    { 
+        
+        if (!IO_Enable[i]) IO_TestState[i] = OFF;
+        else
+        { 
+         if (IO_Address[i]<=31)
+         {
+          if(IO_TestState[i])
+          {
+           setbit(IO_Address[i],OutputRegTest1);
+          }
+          else clrbit(IO_Address[i],OutputRegTest1);
+         }
+         else
+         {
+           if(IO_TestState[i])
+           {
+            setbit(IO_Address[i],OutputRegTest2);
+           }
+           else clrbit(IO_Address[i],OutputRegTest2);
+         }
+        }
+        
+    }
+}
+    if(MaxNumbOfIO > 31) 
+    {
+       pout(OutputRegTest1,31,0);
+       pout(OutputRegTest2,MaxNumbOfIO,32);
+       Bit31 = bit(31,OutputRegTest1);
+       bout(31,Bit31);
+       if(MaxNumbOfIO == 63)
+       {
+        Bit31 = bit(31,OutputRegTest2);
+        bout(63,Bit31);
+       }
+    }
+    if(MaxNumbOfIO > 0 && MaxNumbOfIO <= 31) pout(OutputRegTest1,MaxNumbOfIO,0);
+    
+     
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : OUT_Refresh
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08/25
+--  
+--  Purpose           : Refresh physical Digital Outputs
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : Feeder Outputs will also be refreshed with 
+--                      Feeding Instructions - RTCWin
+--------------------------------------------------------------------------*/
+void OUT_Refresh2(void)
+{
+bool Bit31;
+//int TempOutputs,TempOutputs2;
+
+//OutputReg1 = 0;
+//OutputReg2 = 0;
+
+    if(MaxNumbOfIO > 31) 
+    {
+       pout(OutputReg1,31,0);
+       pout(OutputReg2,MaxNumbOfIO,32);
+       Bit31 = bit(31,OutputReg1);
+       bout(31,Bit31);
+       if(MaxNumbOfIO == 63)
+       {
+        Bit31 = bit(31,OutputReg2);
+        bout(63,Bit31);
+       }
+    }
+    if(MaxNumbOfIO > 0 && MaxNumbOfIO <= 31) pout(OutputReg1,MaxNumbOfIO,0);
+    
+     
+}
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : RefreshFeederOutputs
+--  Created by        : Steve Santerre
+--  Last modified on  : 2016/06/08
+--  
+--  Purpose           : Refresh Feeders Outputs array value
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : Feeder Outputs are controlled via 
+                        Feeding Instructions - RTCWin
+                        Their corresponding array need to be kept updated
+--------------------------------------------------------------------------*/
+void RefreshFeederOutputs(void)
+{
+  if(IO_Enable[O_DribbleFeed1])         IO_State[O_DribbleFeed1] = out(IO_Address[O_DribbleFeed1]);
+  if(IO_Enable[O_BulkFeed1])         IO_State[O_BulkFeed1] = out(IO_Address[O_BulkFeed1]);
+  if(IO_Enable[O_CatchGate1])         IO_State[O_CatchGate1] = out(IO_Address[O_CatchGate1]);
+  if(IO_Enable[O_DribbleFeed2])         IO_State[O_DribbleFeed2] = out(IO_Address[O_DribbleFeed2]);
+  if(IO_Enable[O_BulkFeed2])         IO_State[O_BulkFeed2] = out(IO_Address[O_BulkFeed2]);
+  if(IO_Enable[O_CatchGate2])         IO_State[O_CatchGate2] = out(IO_Address[O_CatchGate2]);
+}
+
+
+bool VerifyStart(void)
+{
+   if((StartHMI || (IO_Enable[I_Start] && Input_State(I_Start) && !I_StartMem)) && T_Dn(T_FirstScan))
+    {
+      if(Current_Screen != SCREEN_AUTOMATIC) Force_Screen_Req(SCREEN_AUTOMATIC, LARGE);
+      I_StartMem = ON;
+      StartHMI=OFF;
+      
+      if(DischargedCall || (!DischReq && WP.WeighmentsPerUnit==1))
+       {
+        if(DischargedCall)
+         {
+          Discharged(1);
+          Discharged(2);
+         } 
+        Output_OFF(O_BagHolder);
+        Output_ON(O_BagRelease);
+        T_EnOn(T_BagRelease);
+        DischargedCall = OFF;
+       }
+
+      EmptyBuffer();
+                        
+      if(Check_Scale_Cfg())
+        {
+         SeqModeManager = stp_PREP_MODE;
+         Discharge_State[Scale1] = DischPanOff;
+         Discharge_State[Scale2] = DischPanOff;
+         if(BatchEnded)
+           {
+             Batch.Count = 0;
+             BatchEnded = OFF;
+             Output_OFF(O_BatchEnded);
+             RefreshAutoScreenReq();
+           }
+        }
+    return(ON);
+    }
+  else
+    return(OFF);
+}      
+
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_ModeManager
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Mode Manager Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+
+void SEQ_ModeManager (void)
+{
+ bool SampledInPauseMem;
+ 
+if(IO_Enable[I_Start] && !Input_State(I_Start)) 
+  I_StartMem = OFF;
+if(IO_Enable[I_Stop] && !Input_State(I_Stop)) 
+  I_StopMem = OFF;
+if(IO_Enable[I_ManDisch1]&& !Input_State(I_ManDisch1))
+  I_ManDischMem1 = OFF;
+if(IO_Enable[I_ManDisch2]&& !Input_State(I_ManDisch2))
+  I_ManDischMem2 = OFF;  
+if(Fault_Type[FLT_GEN]!=0 || OffHMI) 
+  {SeqModeManager = stp_OFF_MODE;OffHMI=OFF;}
+if((Fault_Type[FLT_GEN]!=0 ||(SeqModeManager!= stp_OFF_MODE && SeqModeManager!= stp_STOP_MODE && 
+ ManualModeStep != stp_ManualOkToDisch &&!CycleInHoldMem[Scale1]&&!CycleInHoldMem[Scale2])) && StartHMI) 
+  StartHMI=OFF;
+if((SeqModeManager!= stp_AUTO_MODE && SeqModeManager != stp_MANUAL_MODE) && StopHMI) 
+  StopHMI=OFF;
+  
+if (ChangeWPInStopMode) //SADM2
+   {
+    SeqModeManager = stp_OFF_MODE;
+    ChangeWPInStopMode = OFF;
+   }
+
+if((IO_Enable[I_BatchEnd] && Input_State(I_BatchEnd)) || BatchEndViaComm)
+ {
+   BatchEndViaComm = OFF;
+   if(AutoMode && Batch.Preset > 0) 
+    {
+     BatchEndReq = ON;
+    }
+ }
+     
+if(IO_State[O_BagRelease])
+ if(SeqManDischarge == stp_INIT && Seq2ManDischarge == stp_INIT && T_Dn(T_BagRelease))
+ {
+  Output_OFF(O_BagRelease);
+  T_EnOff(T_BagRelease);
+ } 
+
+if(IO_Enable[I_HoldCycle] && !Input_State(I_HoldCycle) && HoldCycleMem) 
+  HoldCycleMem = OFF;
+
+if(PauseHMI || (IO_Enable[I_HoldCycle] && Input_State(I_HoldCycle) && !HoldCycleMem))
+ {
+  AutoPause = !AutoPause;
+  HoldCycleMem = ON;
+  PauseHMI = OFF;
+  CurMode_Set();
+ }
+ 
+ if(SampledInPauseMem != SampledInPause)
+ {
+  if(SampledInPause)
+   Output_ON(O_CycleInHold);
+  else
+   Output_OFF(O_CycleInHold); 
+  SampledInPauseMem = SampledInPause;
+ } 
+
+      //Units Per Minute Calculation
+      if(SeqMaster == stp_DISCHARGING || Seq2Master == stp_DISCHARGING)
+       {
+        if(!DischargingMem)
+         {
+           if(WeighPerUnitDone) 
+            if(T_EN[T_UPMDuration])
+             {
+               ProdCycleUnitsPerMin = 60/T_Acc(T_UPMDuration);
+               T_EnOff(T_UPMDuration);
+             }  
+            if(!T_EN[T_UPMDuration]) 
+             T_EnOn(T_UPMDuration);
+            DischargingMem = ON;
+         }
+       }   
+      else 
+       { 
+        if(DischargingMem)     
+         DischargingMem = OFF;
+       }      
+
+    switch (SeqModeManager)
+    {
+      case stp_OFF_MODE:
+            if(SeqModeManagerMEM!=SeqModeManager)
+              {
+               SeqModeManagerMEM = SeqModeManager;
+               Start_PauseBtn = StartBtn;
+               AutoPause = OFF;  
+               SampledInPause = OFF;
+               KeyLockPTSZI(LAST,LAST,LAST,OFF,LAST);
+               VarInitOffFlag = Execute;
+               VarInitCycle(OFF);
+               ChangeSMStateFlag = Execute;
+               DischReqCheck();
+              }
+              
+         if(VarInitOffFlag != Execute) 
+          if(Fault_Type[FLT_GEN]==0)
+          {    
+            if(StepMsg[Scale1]!=lsub(TX_MSGWAITINGFORSTART) && T_Dn(T_FirstScan)) MessageDisplay(lsub(TX_MSGWAITINGFORSTART),Step_Message,1);
+            if(StepMsg[Scale2]!=lsub(TX_MSGBLANK) && T_Dn(T_FirstScan)) MessageDisplay(lsub(TX_MSGBLANK),Step_Message,2);
+            
+            if(VerifyStart()) 
+             {
+              VarInitOffFlag = Execute;
+              break;
+             }
+                
+               if(Discharge_State[Scale1] == DischMan && (DischargeHMI1 ||(IO_Enable[I_ManDisch1]&& Input_State(I_ManDisch1)&&!I_ManDischMem1)))
+                {
+                    if(!MC.CFGBagHolder || ManualModeStep == stp_ManualOkToDisch || ManualModeStep == stp_INIT)
+                        {
+                        DischargeHMI1 = OFF;
+                        I_ManDischMem1 = ON;
+                        ManualModeStep = stp_ManualDisch1;
+                        SeqModeManager = stp_MANUAL_MODE;
+                        break;
+                        }
+                     else 
+                        {
+                         FaultHandler(FltS_BagNotDetected,"");
+                        } 
+                }        
+                        
+               if(Discharge_State[Scale2] == DischMan && (DischargeHMI2 ||(IO_Enable[I_ManDisch2]&& Input_State(I_ManDisch2)&&!I_ManDischMem2)))
+                {
+                    if(!MC.CFGBagHolder || ManualModeStep == stp_ManualOkToDisch || ManualModeStep == stp_INIT)
+                        {
+                        DischargeHMI2 = OFF;
+                        I_ManDischMem2 = ON;
+                        ManualModeStep = stp_ManualDisch2;
+                        SeqModeManager = stp_MANUAL_MODE;
+                        break;
+                        }
+                     else 
+                        {
+                         FaultHandler(FltS_BagNotDetected,"");
+                        }
+                }                     
+              
+              if(WP.FeedAlgoType != FeediQSim)
+              {
+               if(MC.CFGBagHolder != 0)
+                if((DischReq && !DischReqMem && !IO_Enable[I_EmptyBagReady]) || (Input_State(I_EmptyBagReady) && !EmtpyBagReadyMem && IO_Enable[I_EmptyBagReady]))
+                        {
+                        ManualModeStep = stp_ManualSpout;
+                        SeqModeManager = stp_MANUAL_MODE;
+                        break;
+                        }
+              }          
+        
+          }                   
+                                              
+            break;
+               
+
+              
+      case stp_STOP_MODE:
+      if(SeqModeManagerMEM!=SeqModeManager)
+         {
+         SeqModeManagerMEM = SeqModeManager;
+         Start_PauseBtn = StartBtn;
+         KeyLockPTSZI(LAST,LAST,LAST,OFF,LAST);
+         Hopper_State = HopperFill;
+         
+         if(CleanoutWeighment[Scale1] && CleanoutWeighment[Scale2])
+         {
+          if(Batch.Preset > 0)
+          {
+           BatchEnded = ON;
+           Output_ON(O_BatchEnded);
+          } 
+          CleanoutWeighment[Scale1] = OFF;
+          CleanoutWeighment[Scale1] = OFF;
+         } 
+
+         if(IO_State[O_CleanoutCompleted1]) Output_OFF(O_CleanoutCompleted1);
+         if(IO_State[O_CleanoutCompleted2]) Output_OFF(O_CleanoutCompleted2);
+         Output_OFF(O_CycleInProgress);
+         //if(IO_Enable[O_ClosingCnv]) Output_OFF(O_ClosingCnv);
+         if(BatchEnded) MessageDisplay(lsub(TX_MSGENDOFBATCH),Step_Message,1);
+         else           MessageDisplay(lsub(TX_MSGWAITINGFORSTART),Step_Message,1);
+         }
+      if(StartHMI || (IO_Enable[I_Start] && Input_State(I_Start) && !I_StartMem))
+                        {
+                        if(Current_Screen != SCREEN_AUTOMATIC) Force_Screen_Req(SCREEN_AUTOMATIC, LARGE);
+                        I_StartMem = ON;
+                        StartHMI=OFF;
+                        
+                        if(DischargedCall || (!DischReq && WP.WeighmentsPerUnit==1))
+                         {
+                          if(DischargedCall)
+                          {
+                           Discharged(1);
+                           Discharged(2);
+                          }
+                          Output_OFF(O_BagHolder);
+                          Output_ON(O_BagRelease);
+                          T_EnOn(T_BagRelease);
+                          DischargedCall = OFF;
+                         }
+                        
+                        EmptyBuffer();
+                        SeqModeManager = stp_AUTO_MODE;
+                        Output_ON(O_CycleInProgress);
+                        if(BatchEnded)
+                         {
+                          Batch.Count = 0;
+                          BatchEnded = OFF;
+                          Output_OFF(O_BatchEnded);
+                          RefreshAutoScreenReq();
+                         } 
+                        }
+                                     
+            break;
+
+      case stp_STOPPING_MODE:
+            if(SeqModeManagerMEM != SeqModeManager)
+              {
+              SeqModeManagerMEM = SeqModeManager;
+              }
+            if((SeqMaster==stp_INIT || (SeqMaster==stp_RDYTODISCH && BatchEnded)) && (Seq2Master==stp_INIT || (Seq2Master==stp_RDYTODISCH && BatchEnded)) 
+             && SeqKicker==stp_INIT && UnitCompleted) SeqModeManager = stp_STOP_MODE;  
+            break;
+            
+      case stp_MANUAL_MODE:
+            if(SeqModeManagerMEM != SeqModeManager)
+              {
+               SeqModeManagerMEM = SeqModeManager;
+               ChangeSMStateFlag = Execute;
+              }
+            
+            if(ManualModeStep == stp_ManualOkToDisch)
+             {
+              if(Discharge_State[Scale1] == DischMan && (DischargeHMI1 ||(IO_Enable[I_ManDisch1]&& Input_State(I_ManDisch1)&&!I_ManDischMem1)))
+                        {
+                        DischargeHMI1 = OFF;
+                        I_ManDischMem1 = ON;
+                        ManualModeStep = stp_ManualDisch1;
+                        SeqModeManager = stp_MANUAL_MODE;
+                        break;
+                        }
+              
+              if(Discharge_State[Scale2] == DischMan && (DischargeHMI2 ||(IO_Enable[I_ManDisch2]&& Input_State(I_ManDisch2)&&!I_ManDischMem2)))
+                        {
+                        DischargeHMI2 = OFF;
+                        I_ManDischMem2 = ON;
+                        ManualModeStep = stp_ManualDisch2;
+                        SeqModeManager = stp_MANUAL_MODE;
+                        break;
+                        }          
+               
+              if(VerifyStart()) 
+              {
+               break;
+              }
+             }
+            
+            if((SeqManDischarge == stp_DONE && Seq2ManDischarge == stp_DONE) || ManualModeStep == stp_DONE) SeqModeManager = stp_OFF_MODE;
+            break;               
+                            
+      case stp_PREP_MODE:
+        if(SeqModeManagerMEM != SeqModeManager)
+           {
+            SeqModeManagerMEM = SeqModeManager;
+            ChangeSMStateFlag = Execute;
+            CheckOutput = Execute;
+           }
+         if(Fault_Type[FLT_STOP]==0)
+            if((CheckLowLevel(1)) && (CheckLowLevel(2)))
+            {
+            VarInitCycle(OFF);
+            if(VarInitOffFlag != Execute)
+             {
+              if(CheckOutputConfig())
+               if(Actuator() && Actuator2())
+                if(KickerCheck())
+                {
+                 Output_ON(O_CycleInProgress);
+                 SeqModeManager = stp_AUTO_MODE;
+                }
+             } 
+            }
+        break;
+             
+      case stp_AUTO_MODE:
+      if(SeqModeManagerMEM!=SeqModeManager)
+          {
+          SeqModeManagerMEM = SeqModeManager;
+          Start_PauseBtn = PauseBtn;
+          KeyLockPTSZI(LAST,LAST,LAST,ON,LAST);
+          //if(IO_Enable[O_ClosingCnv]) Output_ON(O_ClosingCnv);
+          MessageDisplay(lsub(TX_MSGBLANK),Step_Message,1);
+          MessageDisplay(lsub(TX_MSGBLANK),Step_Message,2);                                
+          } 
+          
+      if(Fault_Type[FLT_STOP]!=0 || StopHMI || (IO_Enable[I_Stop] && Input_State(I_Stop) && !I_StopMem) || BatchEnded 
+      || ((CleanoutWeighment[Scale1]||!Scale1ON)&&(CleanoutWeighment[Scale2]||!Scale2ON)))
+                        {  
+                        SeqModeManager = stp_STOPPING_MODE;
+                        I_StopMem = ON;
+                        StopHMI=OFF;
+                        }
+                             
+           break;
+            
+          
+    }
+
+
+if(SeqModeManager!= mode_step || Current_Screen!=Current_ScreenMEM)
+          {
+          RefreshGrayoutFlag = ON;
+          if(SeqModeManager == stp_OFF_MODE)
+           {
+            if (SeqModeManager!= mode_step)ScanMax = FillingTaskIntervalOff / 1000.0;
+            if(Current_Screen != Current_ScreenMEM)
+             {
+             if(Current_Screen == SCREEN_AUTOMATIC) 
+               OutResetFlag = Execute;
+             }
+           }
+          else 
+           {
+           if (SeqModeManager!= mode_step)ScanMax = FillingTaskIntervalAuto / 1000.0;
+           }   
+          if (SeqModeManager!= mode_step) 
+          	{
+          		mode_step = SeqModeManager; 
+          		Clear_ButtonControlRefreshedFlag = ON;
+          	}
+          Current_ScreenMEM = Current_Screen;
+          CurMode_Set();
+          }
+        
+        if( mode_step_MEM != mode_step) CurMode_Set();
+        
+        
+        if(AutoMode)
+           if(Batch.Preset > 0 && (Batch.Count >= Batch.Preset|| BatchCancelled))
+             {
+              BatchEnded = ON;
+              BatchEndReq = OFF;
+              BatchCancelled = OFF;
+              Output_ON(O_BatchEnded);
+             }  
+              
+}
+
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_Master
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Weigher Master Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+
+void SEQ_Master (void)
+{
+bool MsgDownStreamSent,MsgWaitPauseSent;
+if(SeqModeManager == stp_OFF_MODE) SeqMaster = stp_INIT;
+if(IO_Enable[I_ResetOutofTolAlarm]&&!Input_State(I_ResetOutofTolAlarm))I_ResetOutofTolAlarmMem=OFF;
+
+
+switch (SeqMaster)
+       {
+  case stp_INIT:
+            if(SeqMasterMEM != SeqMaster)
+                {
+                SeqMasterMEM = SeqMaster;
+                if(SeqModeManager != stp_OFF_MODE) MessageDisplay(lsub(TX_MSGBLANK),Step_Message,1);
+                if(FeedInProcess[Scale1]) WeighmentAborted[Scale1] = ON;
+                TopUp[Scale1] = OFF;
+                VarInitCycle(ON);
+                MsgDownStreamSent = OFF;
+                RefreshAutoScreenReq();
+                }
+          if((SeqModeManager==stp_AUTO_MODE || (SeqModeManager==stp_STOPPING_MODE && !StopForUnit[Scale1])) && Scale1ON && !CleanoutWeighment[Scale1])
+          {
+           if(!BatchEnded)
+            {
+            if(FirstWeighment[Scale1] && NetWeight[Scale1] > (MaxWeight[Scale1] * ZeroLimit)){SeqMaster = stp_SAMPLE;break;}
+            if ((ZeroFreqCnt[Scale1] == 0 || (WP.FeedAlgoType != FeediQSim && (LowLevel[Scale1] || EmptyHopper)))&& !AutoZeroOff && !WP.ZeroingOpen)
+               {
+                if((IO_Enable[I_DischDoorClose1] && Input_State(I_DischDoorClose1))|| !IO_Enable[I_DischDoorClose1])
+                  {
+                   T_EnOff(T_FeedDelayTime);
+                   SetZeroStatus[Scale1]=-1;
+                   if(CheckLowLevel(1))
+                    SeqMaster = stp_ZERO;
+                  }
+               }   
+            else if(!T_EN[T_FeedDelayTime]||(T_Dn(T_FeedDelayTime)&&T_EN[T_FeedDelayTime]))
+             {
+              T_EnOff(T_FeedDelayTime);
+              if(CheckLowLevel(1))
+              {
+               if(NetWeight[Scale1] < (0.8*TargetWeight[Scale1]))
+                {
+                 if(Actuator())
+                 SeqMaster = stp_FEED;
+                }
+               else
+                {
+                 SystemErrorCode = "601 Weighment not discharged #1";
+                } 
+              }
+
+             }
+            }
+          } 
+          break;
+            
+  case stp_ZERO:
+            if(SeqMasterMEM != SeqMaster) 
+             {
+              SeqMasterMEM = SeqMaster;
+             }     
+            
+            if(SetZeroStatus[Scale1] != 0) 
+            {
+             if(!IsSettled[Scale1])
+                {
+                  MessageDisplay(lsub(TX_MSGSTABILIZATION),Step_Message,1);                
+                  if(SeqMasterMEM != SeqMaster ||(!T_EN[T_StabTimeLimit]&&!FaultState(FltS_StabTooLong))) {T_EnOn(T_StabTimeLimit);}  
+                  else 
+                   {
+                    if(T_Dn(T_StabTimeLimit)) 
+                     {
+                      FaultHandler(FltS_StabTooLong,"");
+                      T_EnOff(T_StabTimeLimit);
+                      if(!WP.ZeroingOpen)SeqMaster = stp_INIT;
+                     }
+                   }
+                  break;
+                }
+             else
+               {
+                  T_EnOff(T_StabTimeLimit);
+                  if(FaultState(FltS_StabTooLong))FaultResetReq();
+                  if(WP.FeedAlgoType == FeediQSim) 
+                   {
+                    iQSimSetWeight(SCALE_CHANNEL1, SCALE_NUMBER1,0.0);
+                    SetZeroStatus[Scale1] = 0;
+                   } 
+                  else
+                   {
+                    if(abs(NetWeight[Scale1]) <= (MaxWeight[Scale1] * ZeroLimit)&& SetZeroStatus[Scale1]==-1) SetZeroStatus[Scale1] = setzero(Scale1Adm);
+                    else SetZeroStatus[Scale1] = 99;
+                   }
+               }
+            }
+                  
+             switch (SetZeroStatus[Scale1]) 
+                    {
+                    case 99:if(!FaultState(FltS_ZeroOutOfRange))
+                            {
+                             FaultHandler(FltS_ZeroOutOfRange,"");
+                             if(!WP.ZeroingOpen)SeqMaster = stp_INIT;
+                            }
+                             SetZeroStatus[Scale1]=-1;
+                             break;
+                    case 0: 
+                         {
+                         if(FaultState(FltS_ZeroOutOfRange))FaultResetReq();
+                         MessageDisplay(lsub(TX_MSGZERODONE),Step_Message,1);
+                         WeighmentInPan[Scale1] = OFF;
+                         if(WP.WeighmentsPerUnit == 1) 
+                           Discharged(1);
+                         if(!WP.ZeroingOpen) 
+                          {
+                           if(CheckLowLevel(1))
+                            if(Actuator())
+                             SeqMaster = stp_FEED;
+                          }  
+                         if(WP.ZeroingOpen)  SeqMaster = stp_DISCHARGING;
+                         break;
+                         }                                    
+                    default:
+                            MessageDisplay(concat(lsub(TX_MSGSYSTEMWARNING),100 + SetZeroStatus[Scale1]),Step_Message,1);
+                            SetZeroStatus[Scale1]=-1;
+                            break;
+                    }
+             
+
+             
+  case stp_FEED:
+            if(SeqMasterMEM != SeqMaster) 
+            {
+            SeqMasterMEM = SeqMaster;
+            MessageDisplay(lsub(TX_MSGFEEDING),Step_Message,1);
+            FeedInProcess[Scale1] = ON;
+            ZeroFreqCnt[Scale1]++;
+            } 
+             
+            if(SeqFeeder == stp_FEEDDONE && !IsCleanoutDone[Scale1])
+            { 
+               FeedInProcess[Scale1] = OFF;
+               if (!FeedCycleCancelled[Scale1])
+                 {        
+                 if((SampleFreqCnt[Scale1]>=0 && SampleFreqCnt[Scale1]<MP.SampleSize)||(WP.FeedAlgoType != FeediQSim && (LowLevel[Scale1] || EmptyHopper)) 
+                    || CheckAll  || iQFeedWaitSettled[Scale1] || CheckOnce[Scale1] || AutoPause)
+                   {
+                    if(T_Dn(T_FaultDisplay))
+                     DisplayAlarmDelay[Scale1] = OFF;
+                     
+                    if(!DisplayAlarmDelay[Scale1])
+                     {
+                      CheckOnce[Scale1] = OFF;
+                      SampledInPause = AutoPause;
+                      SeqMaster = stp_SAMPLE;
+                     }
+                    
+                   } 
+                 else 
+                  {
+                   if(!WeighmentInPan[Scale1]) 
+                    {
+                     WeighingDataRefreshFlag[Scale1] = ON;
+                    } 
+                   SeqMaster = stp_RDYTODISCH;
+                  } 
+                 }
+             else  SeqMaster = stp_INIT;
+            }    
+            break;
+            
+  case stp_SAMPLE:
+            if(SeqMasterMEM != SeqMaster) SeqMasterMEM = SeqMaster;      
+            if(!IsSettled[Scale1])
+                  {
+                  MessageDisplay(lsub(TX_MSGSTABILIZATION),Step_Message,1);                
+                  if(SeqMasterMEM != SeqMaster ||(!T_EN[T_StabTimeLimit]&&!FaultState(FltS_StabTooLong))) {T_EnOn(T_StabTimeLimit);}  
+                  else {if(T_Dn(T_StabTimeLimit)) {FaultHandler(FltS_StabTooLong,""); T_EnOff(T_StabTimeLimit);}}
+                  break;
+                  }
+            else 
+            {
+            T_EnOff(T_StabTimeLimit);
+            if(FaultState(FltS_StabTooLong))FaultResetReq();
+            CheckedWeight[Scale1] = NetWeight[Scale1];
+            WeightSampled[Scale1]=ON;
+            if(!TopUp[Scale1])
+              {
+               CorrWeight[Scale1] = CheckedWeight[Scale1];
+              }
+            
+            if(WP.FeedAlgoType != FeediQSim && !SlowCycleOccured[Scale1]) 
+             if(CheckedWeight[Scale1] < WP.UnderWeight && WP.TopUpONTime > 0) 
+              {
+               TopUp[Scale1] = ON;
+               SeqMaster = stp_TOPUP;
+               break;
+              }
+              
+            if(CheckedWeight[Scale1] < WP.UnderWeight || CheckedWeight[Scale1] > WP.OverWeight)
+             { 
+              ZeroFreqCnt[Scale1] = 0;
+              SampleFreqCnt[Scale1] = 0;
+              SeqMaster = stp_OUTOFTOL;
+              break;
+             } 
+             else 
+             {
+             if(!WeighmentInPan[Scale1]) WeighingDataRefreshFlag[Scale1] = ON;
+             SeqMaster = stp_RDYTODISCH;
+             }
+            break;
+            }
+            
+  case stp_TOPUP:
+            if(SeqMasterMEM != SeqMaster) 
+             {
+              SeqMasterMEM = SeqMaster;
+              MessageDisplay(lsub(TX_MSGFEEDTOPUP),Step_Message,1);
+              if(WP.FeedAlgoType != FeedStd)
+               {
+                InitStandardFeed(OFF,1);
+               }
+              if(AOUTActive[AIO1])
+                  {
+                   if(MC.FeederType != FeederDS)
+                    {
+                     aout(AIO1,WP.MinFeeding1);
+                    }
+                   else
+                    {
+                     aout(AIO1,0);
+                    }  
+                  }
+            
+              if(AOUTActive[AIO3])
+                 {
+                  if(MC.FeederType == FeederDS)
+                  {
+                   aout(AIO3,WP.MinFeeding1);
+                  }
+                   
+                 } 
+             
+              if(IO_Enable[O_StreamRegulator1])
+               {
+                if(WP.StreamRegConfig == StreamRegHigh) 
+                 StreamRegRaise(1);
+                else 
+                 StreamRegLower(1);                                   
+               }
+             }  
+            if(NetWeight[Scale1] < WP.UnderWeight && !SlowCycleOccured[Scale1])
+                {
+                   
+                  if(!T_EN[T_TopUpONTime])
+                     {
+                     T_EnOn(T_TopUpONTime);
+                     Output_ON(O_DribbleFeed1);
+                     Output_ON(O_CatchGate1);
+                     }
+                  if((T_Dn(T_TopUpONTime)&&!T_EN[T_TopUpOFFTime]))
+                     {
+                     T_EnOn(T_TopUpOFFTime);
+                     Output_OFF(O_DribbleFeed1);
+                     Output_OFF(O_CatchGate1);
+                     }
+                  if(T_Dn(T_TopUpOFFTime))
+                     {
+                     T_EnOff(T_TopUpONTime);
+                     T_EnOff(T_TopUpOFFTime);
+                     }
+                  break;   
+                }                            
+            else
+            {
+            
+             if(!SlowCycleOccured[Scale1] || (SlowCycleOccured[Scale1] && !DisplayAlarmDelay[Scale1]))
+             {
+              T_EnOff(T_TopUpONTime);
+              T_EnOff(T_TopUpOFFTime);
+              Output_OFF(O_DribbleFeed1);
+              Output_OFF(O_CatchGate1);
+              InitiQSmart[Scale1] = ON;
+              InitiQFlash[Scale1] = ON;
+              if(AOUTActive[AIO1]) aout(AIO1,0);
+              if(AOUTActive[AIO3]) aout(AIO3,0); 
+             }
+                     
+             if(SlowCycleOccured[Scale1] && !DisplayAlarmDelay[Scale1]) 
+              DisplayAlarmDelay[Scale1] = ON;
+             if(T_Dn(T_FaultDisplay))
+              DisplayAlarmDelay[Scale1] = OFF;
+            
+             if(!DisplayAlarmDelay[Scale1])
+              {
+               SeqMaster = stp_SAMPLE;
+              }
+             
+             break;
+            }
+            
+  case stp_OUTOFTOL:
+          
+                    
+          if(SeqMasterMEM != SeqMaster || (!FaultState(FltB_UnderWeight) && !FaultState(FltB_OverWeight) && !CleanoutWeighment[Scale1]))
+          {    
+                     
+              if(MP.OutOfTolTime > 0) T_EnOn(T_OutOfTolTime);
+              if(CheckedWeight[Scale1] < WP.UnderWeight)
+              {
+                 if(!FaultState(FltB_UnderWeight) && !CleanoutWeighment[Scale1]) 
+                  FaultHandler(FltB_UnderWeight,"");
+                 if(SeqMasterMEM != SeqMaster)
+                 {
+                  if(!CleanoutWeighment[Scale1])
+                  {
+                   Discharge_State[Scale1] = DischUnder;
+                   Output_ON(O_UnderWeightAlarm1);
+                   Output_ON(O_OutOfTolerance1);
+                  }
+                   
+                  if(!OutOfTol[Scale1] && !WeighmentInPan[Scale1])
+                   {
+                    ProdUnderWeightFlag[Scale1]=ON;
+                    OutOfTol[Scale1] = ON;
+                    WeighingDataRefreshFlag[Scale1] = ON;
+                   }
+                 }
+              }
+              if(CheckedWeight[Scale1] > WP.OverWeight) 
+              {
+               if(!FaultState(FltB_OverWeight) && !CleanoutWeighment[Scale1]) 
+                FaultHandler(FltB_OverWeight,"");
+               if(SeqMasterMEM != SeqMaster)
+                 {
+                  if(!CleanoutWeighment[Scale1])
+                  {
+                   Discharge_State[Scale1] = DischOver;
+                   Output_ON(O_OverWeightAlarm1);
+                   Output_ON(O_OutOfTolerance1);
+                  }
+                   
+                  if(!OutOfTol[Scale1] && !WeighmentInPan[Scale1])
+                   {
+                    ProdOverWeightFlag[Scale1]=ON;
+                    OutOfTol[Scale1] = ON;
+                    WeighingDataRefreshFlag[Scale1] = ON;
+                  } 
+                 }
+              }
+              if(SeqMasterMEM != SeqMaster) SeqMasterMEM = SeqMaster;
+              break;
+          }
+                            
+          if(DischargeHMI1 || CleanoutWeighment[Scale1] || (IO_Enable[I_ResetOutofTolAlarm]&&Input_State(I_ResetOutofTolAlarm)&&!I_ResetOutofTolAlarmMem) || T_Dn(T_OutOfTolTime)) 
+          {  
+            if(IO_Enable[I_ResetOutofTolAlarm]&&Input_State(I_ResetOutofTolAlarm))I_ResetOutofTolAlarmMem=ON; 
+            T_EnOff(T_OutOfTolTime);
+            Output_OFF(O_UnderWeightAlarm1);
+            Output_OFF(O_OverWeightAlarm1);
+            Output_OFF(O_OutOfTolerance1);
+            Discharge_State[Scale1] = DischPanOff;
+            DischargeHMI1=OFF;
+            FaultResetReq();
+            SeqMaster = stp_RDYTODISCH;
+            break;
+          }  
+          else  break;
+            
+  case stp_RDYTODISCH:
+            if(SeqMasterMEM != SeqMaster)
+            {
+            SeqMasterMEM = SeqMaster;
+            MsgWaitPauseSent = OFF;
+            if(Discharge_State[Scale1] != DischPanOff) Discharge_State[Scale1] = DischPanOff;
+            if(AutoPause && SampledInPause) 
+             {
+              MessageDisplay(lsub(TX_MSGWAITPAUSE),Step_Message,1);
+              MsgWaitPauseSent = ON;
+             }  
+            else 
+             {
+              MessageDisplay(lsub(TX_MSGBLANK),Step_Message,1);
+             }
+            ProdCycleDuration[Scale1]=T_Acc(T_CycleDuration);
+
+            RefreshAutoScreenReq();
+            T_EnOff(T_CycleDuration);
+            
+            if(!WeighmentInPan[Scale1])
+              {
+                SampleFreqCnt[Scale1]++;
+                if (SampleFreqCnt[Scale1] == MP.SampleSize) LastCheckedWeight[Scale1] = ON;
+              }  
+            WeighmentInPan[Scale1] = ON;        
+            }
+            
+            if(SeqModeManager==stp_AUTO_MODE||SeqModeManager==stp_STOPPING_MODE)
+            {
+             if(!(AutoPause && SampledInPause))
+              {
+               SampledInPause = OFF;
+               if(IO_Enable[O_DischReady] && !IO_State[O_DischReady]) 
+                 Output_ON(O_DischReady);
+
+              if(Seq2Master != stp_RDYTODISCH && Seq2Master != stp_DISCHARGING)
+               if(WeigherNoDisch != 1)
+               { 
+                WeigherNoDisch = 1;
+               } 
+             
+              if(WeigherNoDisch == 1)
+              {                                                                  
+               if(DischReq && ((!DischReqMem && MC.CFGBagHolder==0) || SeqSpout == stp_SPOUTOKTODISCH)) 
+                {
+                MsgDownStreamSent = OFF;
+                WeighPerUnit(1);
+                if(WeighPerUnitDone)DischReqMem=ON;
+                SeqMaster = stp_DISCHARGING;
+                break;
+                }
+              
+               else if(!MsgDownStreamSent) 
+                       {
+                       MessageDisplay(lsub(TX_MSGWAITDOWNSTREAM),Step_Message,1); 
+                       MsgDownStreamSent = ON;
+                       MsgWaitPauseSent = OFF;
+                       }
+              }         
+             }
+              else if(!MsgWaitPauseSent)
+               {
+                MessageDisplay(lsub(TX_MSGWAITPAUSE),Step_Message,1);
+                MsgWaitPauseSent = ON;
+                MsgDownStreamSent = OFF;
+               }         
+
+            } 
+           else if(MsgDownStreamSent) MsgDownStreamSent = OFF;          
+            break;
+            
+  case stp_DISCHARGING:
+            if(SeqMasterMEM != SeqMaster)
+            {
+            SeqMasterMEM = SeqMaster;
+            FirstWeighment[Scale1]=OFF;
+            Output_OFF(O_DischReady);
+            T_EnOn(T_CycleDuration);
+            
+            }
+            if(SeqWeighPan == stp_CLOSEDOORS && (!T_EN[T_FeedDelayTime]|| WP.FeedDelayTime ==0)) 
+            {
+            OutOfTol[Scale1] = OFF;
+            if(WP.FeedDelayTime != 0)T_EnOn(T_FeedDelayTime);
+            feeddelaystart = systemtimer_ms();
+            SeqMaster = stp_INIT;
+            WeigherNoDisch = 2;
+            }
+            break;    
+       }
+       
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_2Master
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Weigher Master Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+
+void SEQ_2Master(void)
+{
+bool MsgDownStreamSent,MsgWaitPauseSent;
+if(SeqModeManager == stp_OFF_MODE) Seq2Master = stp_INIT;
+
+
+switch (Seq2Master)
+       {
+  case stp_INIT:
+            if(Seq2MasterMEM != Seq2Master)
+                {
+                Seq2MasterMEM = Seq2Master;
+                if(SeqModeManager != stp_OFF_MODE) MessageDisplay(lsub(TX_MSGBLANK),Step_Message,2);
+                if(FeedInProcess[Scale2]) WeighmentAborted[Scale2] = ON;
+                TopUp[Scale2] = OFF;
+                VarInitCycle(ON);
+                MsgDownStreamSent = OFF;
+                RefreshAutoScreenReq();
+                }
+          if((SeqModeManager==stp_AUTO_MODE || (SeqModeManager==stp_STOPPING_MODE && !StopForUnit[Scale2])) && Scale2ON && !CleanoutWeighment[Scale2])
+          {
+           if(!BatchEnded)
+            {
+            if(FirstWeighment[Scale2] && NetWeight[Scale2] > (MaxWeight[Scale2] * ZeroLimit)){Seq2Master = stp_SAMPLE;break;}
+            if ((ZeroFreqCnt[Scale2] == 0 || (WP.FeedAlgoType != FeediQSim && (LowLevel[Scale2] || EmptyHopper)))&& !AutoZeroOff && !WP.ZeroingOpen)
+               {
+                if((IO_Enable[I_DischDoorClose2] && Input_State(I_DischDoorClose2))|| !IO_Enable[I_DischDoorClose2])
+                  {
+                   T_EnOff(T_FeedDelayTime2);
+                   SetZeroStatus[Scale2]=-1;
+                   if(CheckLowLevel(2))
+                    Seq2Master = stp_ZERO;
+                  }
+               }   
+            else if(!T_EN[T_FeedDelayTime2]||(T_Dn(T_FeedDelayTime2)&&T_EN[T_FeedDelayTime2]))
+             {
+              T_EnOff(T_FeedDelayTime2);
+              if(CheckLowLevel(2))
+              {
+               if(NetWeight[Scale2] < (0.8*TargetWeight[Scale2]))
+                {
+                 if(Actuator2())
+                 Seq2Master = stp_FEED;
+                }
+               else
+                {
+                 SystemErrorCode = "601 Weighment not discharged #2";
+                } 
+              }
+             }
+            }
+          } 
+          break;
+            
+  case stp_ZERO:
+            if(Seq2MasterMEM != Seq2Master) 
+             {
+              Seq2MasterMEM = Seq2Master;
+             }     
+            
+            if(SetZeroStatus[Scale2] != 0)
+            {
+                  
+             if(!IsSettled[Scale2])
+                {
+                  MessageDisplay(lsub(TX_MSGSTABILIZATION),Step_Message,2);                
+                  if(Seq2MasterMEM != Seq2Master ||(!T_EN[T_StabTimeLimit2]&&!FaultState(FltS_StabTooLong2))) {T_EnOn(T_StabTimeLimit2);}  
+                  else 
+                   {
+                    if(T_Dn(T_StabTimeLimit2)) 
+                     {
+                      FaultHandler(FltS_StabTooLong2,"");
+                      T_EnOff(T_StabTimeLimit2);
+                      if(!WP.ZeroingOpen)Seq2Master = stp_INIT;
+                     }
+                   }
+                  break;
+                }
+             else 
+               {
+                  T_EnOff(T_StabTimeLimit2);
+                  if(FaultState(FltS_StabTooLong2))FaultResetReq();
+                  if(WP.FeedAlgoType == FeediQSim) 
+                   {
+                    iQSimSetWeight(SCALE_CHANNEL2, SCALE_NUMBER2,0.0);
+                    SetZeroStatus[Scale2] = 0;
+                   } 
+                  else
+                   {
+                    if(abs(NetWeight[Scale2]) <= (MaxWeight[Scale2] * ZeroLimit)&& SetZeroStatus[Scale2]==-1) SetZeroStatus[Scale2] = setzero(Scale2Adm);
+                    else SetZeroStatus[Scale2] = 99;
+                   }
+               }
+            }
+               
+             switch (SetZeroStatus[Scale2]) 
+                    {
+                    case 99:if(!FaultState(FltS_ZeroOutOfRange2))
+                             {
+                              FaultHandler(FltS_ZeroOutOfRange2,"");
+                              if(!WP.ZeroingOpen)Seq2Master = stp_INIT;
+                             }
+                             SetZeroStatus[Scale2]=-1;
+                             break;
+                    case 0: 
+                         {
+                         if(FaultState(FltS_ZeroOutOfRange2))FaultResetReq();
+                         MessageDisplay(lsub(TX_MSGZERODONE),Step_Message,2);
+                         WeighmentInPan[Scale2] = OFF;
+                         if(WP.WeighmentsPerUnit == 1) 
+                           Discharged(2);
+                         if(!WP.ZeroingOpen) 
+                          {
+                           if(CheckLowLevel(2))
+                            if(Actuator2())
+                             Seq2Master = stp_FEED;
+                          }  
+                         if(WP.ZeroingOpen)  Seq2Master = stp_DISCHARGING;
+                         break;
+                         }                                    
+                    default:
+                      MessageDisplay(concat(lsub(TX_MSGSYSTEMWARNING),100 + SetZeroStatus[Scale2]),Step_Message,2);
+                      SetZeroStatus[Scale2]=-1;
+                      break;
+                    }
+             
+
+             
+  case stp_FEED:
+            if(Seq2MasterMEM != Seq2Master) 
+            {
+            Seq2MasterMEM = Seq2Master;
+            MessageDisplay(lsub(TX_MSGFEEDING),Step_Message,2);
+            FeedInProcess[Scale2] = ON;
+            ZeroFreqCnt[Scale2]++;
+            } 
+             
+            if(Seq2Feeder == stp_FEEDDONE && !IsCleanoutDone[Scale2])
+            { 
+               FeedInProcess[Scale2] = OFF;
+               if (!FeedCycleCancelled[Scale2])
+                 {        
+                 if((SampleFreqCnt[Scale2]>=0 && SampleFreqCnt[Scale2]<MP.SampleSize)||(WP.FeedAlgoType != FeediQSim && (LowLevel[Scale2] || EmptyHopper)) 
+                    || CheckAll  || iQFeedWaitSettled[Scale2] || CheckOnce[Scale2] || AutoPause)
+                   {
+                    if(T_Dn(T_FaultDisplay2))
+                     DisplayAlarmDelay[Scale2] = OFF;
+                     
+                    if(!DisplayAlarmDelay[Scale2])
+                     {
+                      CheckOnce[Scale2] = OFF;
+                      SampledInPause = AutoPause;
+                      Seq2Master = stp_SAMPLE;
+                     }
+                    
+                   } 
+                 else 
+                  {
+                   if(!WeighmentInPan[Scale2]) 
+                    {
+                     WeighingDataRefreshFlag[Scale2] = ON;
+                    } 
+                   Seq2Master = stp_RDYTODISCH;
+                  } 
+                 }
+             else  Seq2Master = stp_INIT;
+            }    
+            break;
+            
+  case stp_SAMPLE:
+            if(Seq2MasterMEM != Seq2Master) Seq2MasterMEM = Seq2Master;      
+            if(!IsSettled[Scale2])
+                  {
+                  MessageDisplay(lsub(TX_MSGSTABILIZATION),Step_Message,2);                
+                  if(Seq2MasterMEM != Seq2Master ||(!T_EN[T_StabTimeLimit2]&&!FaultState(FltS_StabTooLong2))) {T_EnOn(T_StabTimeLimit2);}  
+                  else {if(T_Dn(T_StabTimeLimit2)) {FaultHandler(FltS_StabTooLong2,""); T_EnOff(T_StabTimeLimit2);}}
+                  break;
+                  }
+            else 
+            {
+            T_EnOff(T_StabTimeLimit2);
+            if(FaultState(FltS_StabTooLong2))FaultResetReq();
+            CheckedWeight[Scale2] = NetWeight[Scale2];
+            WeightSampled[Scale2]=ON;
+            if(!TopUp[Scale2])
+              {
+               CorrWeight[Scale2] = CheckedWeight[Scale2];
+              }
+            if(WP.FeedAlgoType != FeediQSim && !SlowCycleOccured[Scale2]) 
+             if(CheckedWeight[Scale2] < WP.UnderWeight && WP.TopUpONTime > 0) 
+              {
+               TopUp[Scale2] = ON;
+               Seq2Master = stp_TOPUP;
+               break;
+              }
+              
+            if(CheckedWeight[Scale2] < WP.UnderWeight || CheckedWeight[Scale2] > WP.OverWeight)
+             { 
+              ZeroFreqCnt[Scale2] = 0;
+              SampleFreqCnt[Scale2] = 0;
+              Seq2Master = stp_OUTOFTOL;
+              break;
+             } 
+             else 
+             {
+             if(!WeighmentInPan[Scale2]) WeighingDataRefreshFlag[Scale2] = ON;
+             Seq2Master = stp_RDYTODISCH;
+             }
+            break;
+            }
+            
+  case stp_TOPUP:
+            if(Seq2MasterMEM != Seq2Master) 
+             {
+              Seq2MasterMEM = Seq2Master;
+              MessageDisplay(lsub(TX_MSGFEEDTOPUP),Step_Message,2);
+              if(WP.FeedAlgoType != FeedStd)
+               {
+                InitStandardFeed(OFF,2);
+               }
+              if(AOUTActive[AIO2]) 
+                  {
+                   if(MC.FeederType != FeederDS)
+                    {
+                     aout(AIO2,WP.MinFeeding2);
+                    }
+                   else  aout(AIO2,0);
+                  }
+            
+              if(AOUTActive[AIO4])
+                 {
+                  if(MC.FeederType == FeederDS)
+                  {
+                   aout(AIO4,WP.MinFeeding2);
+                  }
+                   
+                 } 
+             
+              if(IO_Enable[O_StreamRegulator2])
+               {
+                if(WP.StreamRegConfig == StreamRegHigh) 
+                 StreamRegRaise(2);
+                else 
+                 StreamRegLower(2);                                   
+               }
+             }  
+            if(NetWeight[Scale2] < WP.UnderWeight && !SlowCycleOccured[Scale2])
+                {
+                   
+                  if(!T_EN[T_TopUpONTime2])
+                     {
+                     T_EnOn(T_TopUpONTime2);
+                     Output_ON(O_DribbleFeed2);
+                     Output_ON(O_CatchGate2);
+                     }
+                  if((T_Dn(T_TopUpONTime2)&&!T_EN[T_TopUpOFFTime2]))
+                     {
+                     T_EnOn(T_TopUpOFFTime2);
+                     Output_OFF(O_DribbleFeed2);
+                     Output_OFF(O_CatchGate2);
+                     }
+                  if(T_Dn(T_TopUpOFFTime2))
+                     {
+                     T_EnOff(T_TopUpONTime2);
+                     T_EnOff(T_TopUpOFFTime2);
+                     }
+                  break;   
+                }                            
+            else
+            {
+            
+             if(!SlowCycleOccured[Scale2] || (SlowCycleOccured[Scale2] && !DisplayAlarmDelay[Scale2]))
+             {
+              T_EnOff(T_TopUpONTime2);
+              T_EnOff(T_TopUpOFFTime2);
+              Output_OFF(O_DribbleFeed2);
+              Output_OFF(O_CatchGate2);
+              InitiQSmart[Scale2] = ON;
+              InitiQFlash[Scale2] = ON;
+              if(AOUTActive[AIO2]) aout(AIO2,0);
+              if(AOUTActive[AIO4]) aout(AIO4,0); 
+             }
+                     
+             if(SlowCycleOccured[Scale2] && !DisplayAlarmDelay[Scale2]) 
+              DisplayAlarmDelay[Scale2] = ON;
+             if(T_Dn(T_FaultDisplay2))
+              DisplayAlarmDelay[Scale2] = OFF;
+            
+             if(!DisplayAlarmDelay[Scale2])
+              {
+               Seq2Master = stp_SAMPLE;
+              }
+             
+             break;
+            }
+            
+  case stp_OUTOFTOL:
+          
+                    
+          if(Seq2MasterMEM != Seq2Master || (!FaultState(FltB_UnderWeight2) && !FaultState(FltB_OverWeight2) && !CleanoutWeighment[Scale2]))
+          {    
+                     
+              if(MP.OutOfTolTime > 0) T_EnOn(T_OutOfTolTime2);
+              if(CheckedWeight[Scale2] < WP.UnderWeight)
+              {
+                 if(!FaultState(FltB_UnderWeight2) && !CleanoutWeighment[Scale2])
+                  FaultHandler(FltB_UnderWeight2,"");
+                 if(Seq2MasterMEM != Seq2Master)
+                 {
+                  if(!CleanoutWeighment[Scale2])
+                  {
+                   Discharge_State[Scale2] = DischUnder;
+                   Output_ON(O_UnderWeightAlarm2);
+                   Output_ON(O_OutOfTolerance2);
+                  } 
+                  if(!OutOfTol[Scale2] && !WeighmentInPan[Scale2])
+                   {
+                    ProdUnderWeightFlag[Scale2]=ON;
+                    OutOfTol[Scale2] = ON;
+                    WeighingDataRefreshFlag[Scale2] = ON;
+                   }
+                 }
+              }
+              if(CheckedWeight[Scale2] > WP.OverWeight)
+              {
+               if(!FaultState(FltB_OverWeight2) && !CleanoutWeighment[Scale2]) 
+                FaultHandler(FltB_OverWeight2,"");
+               if(Seq2MasterMEM != Seq2Master)
+                 {
+                  if(!CleanoutWeighment[Scale2])
+                  {
+                   Discharge_State[Scale2] = DischOver;
+                   Output_ON(O_OverWeightAlarm2);
+                   Output_ON(O_OutOfTolerance2);
+                  } 
+                  if(!OutOfTol[Scale2] && !WeighmentInPan[Scale2])
+                   {
+                    ProdOverWeightFlag[Scale2]=ON;
+                    OutOfTol[Scale2] = ON;
+                    WeighingDataRefreshFlag[Scale2] = ON;
+                  } 
+                 }
+              }
+              if(Seq2MasterMEM != Seq2Master) Seq2MasterMEM = Seq2Master;
+              break;
+          }
+                            
+          if(DischargeHMI2 || CleanoutWeighment[Scale2] || (IO_Enable[I_ResetOutofTolAlarm]&&Input_State(I_ResetOutofTolAlarm)&&!I_ResetOutofTolAlarmMem) || T_Dn(T_OutOfTolTime2)) 
+          {  
+            if(IO_Enable[I_ResetOutofTolAlarm]&&Input_State(I_ResetOutofTolAlarm))I_ResetOutofTolAlarmMem=ON; 
+            T_EnOff(T_OutOfTolTime2);
+            Output_OFF(O_UnderWeightAlarm2);
+            Output_OFF(O_OverWeightAlarm2);
+            Output_OFF(O_OutOfTolerance2);
+            Discharge_State[Scale2] = DischPanOff;
+            DischargeHMI2=OFF;
+            FaultResetReq();
+            Seq2Master = stp_RDYTODISCH;
+            break;
+          }  
+          else  break;
+            
+  case stp_RDYTODISCH:
+            if(Seq2MasterMEM != Seq2Master)
+            {
+            Seq2MasterMEM = Seq2Master;
+            MsgWaitPauseSent = OFF;
+            if(Discharge_State[Scale2] != DischPanOff) Discharge_State[Scale2] = DischPanOff;
+            if(AutoPause && SampledInPause) 
+             {
+              MessageDisplay(lsub(TX_MSGWAITPAUSE),Step_Message,2);
+              MsgWaitPauseSent = ON;
+             }  
+            else 
+             {
+              MessageDisplay(lsub(TX_MSGBLANK),Step_Message,2);
+             }
+            
+            ProdCycleDuration[Scale2]=T_Acc(T_CycleDuration2);
+
+            RefreshAutoScreenReq();
+            T_EnOff(T_CycleDuration2);
+            
+            if(!WeighmentInPan[Scale2])
+              {
+                SampleFreqCnt[Scale2]++;
+                if (SampleFreqCnt[Scale2] == MP.SampleSize) LastCheckedWeight[Scale2] = ON;
+              }  
+            WeighmentInPan[Scale2] = ON;        
+            }
+            
+            if(SeqModeManager==stp_AUTO_MODE||SeqModeManager==stp_STOPPING_MODE)
+            {
+             if(!(AutoPause && SampledInPause))
+              {
+               SampledInPause = OFF;
+               if(IO_Enable[O_DischReady] && !IO_State[O_DischReady]) 
+                 Output_ON(O_DischReady);
+
+               if(SeqMaster != stp_RDYTODISCH && SeqMaster != stp_DISCHARGING) 
+                if(WeigherNoDisch != 2)
+                {
+                 WeigherNoDisch = 2;
+                }  
+             
+               if(WeigherNoDisch == 2)
+               {                                                                  
+                if(DischReq && ((!DischReqMem && MC.CFGBagHolder==0) || SeqSpout == stp_SPOUTOKTODISCH)) 
+                 {
+                  MsgDownStreamSent = OFF;
+                  WeighPerUnit(2);
+                  if(WeighPerUnitDone)DischReqMem=ON;
+                  Seq2Master = stp_DISCHARGING;
+                  break;
+                  }
+                
+                else if(!MsgDownStreamSent) 
+                       {
+                       MessageDisplay(lsub(TX_MSGWAITDOWNSTREAM),Step_Message,2); 
+                       MsgDownStreamSent = ON;
+                       MsgWaitPauseSent = OFF;
+                       }
+               }
+              
+              }
+             else if(!MsgWaitPauseSent)
+               {
+                MessageDisplay(lsub(TX_MSGWAITPAUSE),Step_Message,2);
+                MsgWaitPauseSent = ON;
+                MsgDownStreamSent = OFF;
+               }         
+
+               
+            } 
+             else if(MsgDownStreamSent) MsgDownStreamSent = OFF;          
+             break;
+            
+  case stp_DISCHARGING:
+            if(Seq2MasterMEM != Seq2Master)
+            {
+            Seq2MasterMEM = Seq2Master;
+            FirstWeighment[Scale2]=OFF;
+            Output_OFF(O_DischReady);
+            T_EnOn(T_CycleDuration2);
+            
+            }
+            if(Seq2WeighPan == stp_CLOSEDOORS && (!T_EN[T_FeedDelayTime2]|| WP.FeedDelayTime ==0)) 
+            {
+            OutOfTol[Scale2] = OFF;
+            if(WP.FeedDelayTime != 0)T_EnOn(T_FeedDelayTime2);
+            feeddelaystart = systemtimer_ms();
+            Seq2Master = stp_INIT;
+            WeigherNoDisch = 1;
+            }
+            break;    
+       }
+       
+}
+
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_Feeder
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Feeder Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_Feeder(void)
+{
+ bool FeedingStarted,BulkFeedMem,DribbleFeedMem,Aout1On,Aout3On;
+ int scanmemFeeder[10],startcnt,startdelay,startdelay2;
+ if(SeqModeManager == stp_OFF_MODE) SeqFeeder = stp_INIT;
+
+ if(SeqFeeder != stp_INIT)
+ {
+   if(IO_State[O_BulkFeed1] || IO_State[O_DribbleFeed1] || IO_State[O_CatchGate1])
+   {
+     if(!T_EN[T_AbnormalFeed] && ProdBulkDuration[Scale1] > 0) 
+     { 
+      T_PRE[T_AbnormalFeed] = ProdBulkDuration[Scale1];
+      T_EnOn(T_AbnormalFeed);
+     } 
+    
+     if(T_Dn(T_AbnormalFeed) && (NetWeight[Scale1] < (WP.BulkCutoff1 *0.5)) && !CheckOnce[Scale1]) 
+      CheckOnce[Scale1] = ON;
+   } 
+ }
+
+      if(SeqMaster==stp_FEED && SeqFeeder==stp_INIT)
+      { 
+       switch(WP.FeedAlgoType)
+        {
+         case FeedStd:
+                 SeqFeeder = stp_FEEDSTD;break;
+         case FeediQSim:
+                 SeqFeeder = stp_FEEDSTD;break;         
+         case FeediQSmart:
+                 SeqFeeder = stp_FEEDSMART;break;     
+         case FeediQFlash:
+                 SeqFeeder = stp_FEEDFLASH;break;
+         default:   
+                 SeqFeeder = stp_FEEDSTD;break;             
+        }
+      }
+
+  switch (SeqFeeder)
+  {
+    case stp_INIT:
+            if(SeqFeeder!=SeqFeederMEM) 
+              {
+              SeqFeederMEM = SeqFeeder;
+              iQFeedDone[Scale1] = OFF;
+              FeedingStarted = OFF;
+              FeedCycleCancelled[Scale1] = OFF;
+              //EmptyBuffer();
+              BulkFeedMem = OFF;
+              DribbleFeedMem = OFF;
+              T_EnOff(T_AbnormalFeed);
+              }
+            break;
+            
+    case stp_FEEDSTD:
+            if(SeqFeederMEM != SeqFeeder)
+             {
+              SeqFeederMEM = SeqFeeder;
+              if(WP.FeedAlgoType == FeediQSim) 
+               {
+                 iQSimFeed(1);
+               } 
+             }
+            if(SeqFeedSTD == stp_FSDone)
+             {
+             if(WP.FeedAlgoType == FeediQSim) iQSimStopProgram (SCALE_CHANNEL1, SCALE_NUMBER1);
+             if(!IsCleanoutDone[Scale1]) SeqFeeder = stp_FEEDDONE;
+             }
+            break;
+                                                                                              
+    case stp_FEEDSMART:
+            if(SeqFeederMEM != SeqFeeder)
+               {
+                 SeqFeederMEM = SeqFeeder;
+                 Aout1On = OFF;
+                 Aout3On = OFF;
+                 startcnt=0;
+                 startdelay=0;
+                 startdelay2=0;
+                 feeddelayduration = systemtimer_ms() - feeddelaystart;
+                 if(iQFeedSettledCnt[Scale1] < IQFEEDSETTLEDNBR || (SampleFreqCnt[Scale1]>=0 && SampleFreqCnt[Scale1]<MP.SampleSize) || CheckAll || LowLevel[Scale1] || EmptyHopper)
+                    iQFeedWaitSettled[Scale1] = ON;
+                 else
+                    iQFeedWaitSettled[Scale1] = OFF;
+                 iQFeedSettledCnt[Scale1]++;
+                 
+                 if(InitiQSmart[Scale1] || LearniQSmartParam[Scale1] || LearniQSmartParamMem[Scale1]) InitStartiQSmart(1);
+                 else 
+                  {
+                   iQOutActivate(1);
+                   if(InitCPSmSwitchTime[Scale1])
+                    {
+                      SmSetControlParameters(1);
+                    }
+                  }    
+                 
+                 if(iQSmartLearnNbr[Scale1] < IQFEEDSETTLEDNBR)MessageDisplay(concat(lsub(TX_MSGFEEDING),"...iQSmartLearn"),Step_Message,1);
+                 
+                 if(LearniQSmartParam[Scale1])
+                  {
+                   if(AutoTune_State != AutoTuneON)
+                    {
+                     AutoTune_State = AutoTuneON; 
+                     AutoTuneStateFlag = Execute;
+                    }
+                  } 
+                 else
+                  {
+                  if(AutoTune_State != AutoTuneOFF)
+                   {
+                    AutoTune_State = AutoTuneOFF; 
+                    AutoTuneStateFlag = Execute;
+                   }
+                  }
+                 scanmemFeeder[0] = systemtimer_ms();
+               }           
+            
+            if(AOUTActive[AIO1]  && !Aout1On)
+             {
+              if(MC.FeederType == FeederGV)
+               {
+                if(MC.DribbleOutOnInBulk || out(IO_Address[O_DribbleFeed1]))
+                 {
+                  aout(AIO1,WP.MinFeeding1);
+                  Aout1On = ON;
+                 }
+               } 
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO1,WP.MaxFeeding1);
+                Aout1On = ON;
+               }
+             }
+             if(AOUTActive[AIO3] && !Aout3On)
+              {
+               if(MC.FeederType == FeederDS)
+                if(MC.DribbleOutOnInBulk || out(IO_Address[O_DribbleFeed1]))
+                {
+                aout(AIO3,WP.MinFeeding1);
+                Aout3On = ON;
+                }
+              }
+            
+            if(!FeedingStarted)
+            
+                {
+                 if(WP.StreamRegConfig != StreamRegLow && IO_Enable[O_StreamRegulator1]) StreamRegRaise(1);
+                    
+                 if(T_Dn(T_StreamRegHigh) || WP.StreamRegConfig == StreamRegLow || WP.StreamRegConfig == StreamRegAutoRaiseAtRun || !IO_Enable[O_StreamRegulator1])
+                   {
+                   scanmemFeeder[1] = systemtimer_ms();
+                   FeedingStarted = StartFeeding(1);
+                   
+                   if(!T_EN[T_iQFeedTimeout])T_EnOn(T_iQFeedTimeout);
+                   
+                   if(T_Dn(T_iQFeedTimeout)) 
+                   {
+                    SystemErrorCode = "#1-133 iQ Smart start timeout";
+                    T_EnOff(T_iQFeedTimeout);
+                   }
+                   
+                   startcnt++; 
+                   scanmemFeeder[2] = systemtimer_ms();
+                   startdelay = scanmemFeeder[2] - scanmemFeeder[0];
+                   }
+                } 
+            
+            
+                  
+            if (FeedingStarted)
+            {
+             if(T_EN[T_iQFeedTimeout])T_EnOff(T_iQFeedTimeout);
+             if(IO_State[O_DribbleFeed1] && startdelay2==0) startdelay2 = systemtimer_ms() - scanmemFeeder[2];
+            if(!iQFeedDone[Scale1])
+             {
+              scanmemFeeder[3] = systemtimer_ms();
+              GetFillingData(OFF);
+              scanmemFeeder[4] = systemtimer_ms();
+             }   
+
+              
+              if(WP.StreamRegConfig == StreamRegAutoRaiseAtEnd || WP.StreamRegConfig == StreamRegAutoRaiseAtRun)
+              {
+               if(!BulkFeedMem)
+               { 
+                if((!FeederBWithAout[Scale1] && IO_Enable[O_BulkFeed1] && out(IO_Address[O_BulkFeed1])) || (FeederBWithAout[Scale1] && out(BULK1ADDRESS)))
+                 {
+                   BulkFeedMem = ON;
+                 }
+               }  
+               
+               else
+               {
+                if(!DribbleFeedMem)
+                {
+                 if((!FeederBWithAout[Scale1] && IO_Enable[O_BulkFeed1] && !out(IO_Address[O_BulkFeed1])) || (FeederBWithAout[Scale1] && !out(BULK1ADDRESS)))
+                  {  
+                  StreamRegLower(1);
+                  DribbleFeedMem = ON;
+                  }
+                }
+               }   
+              }    
+                  
+            if(iQFeedDone[Scale1])
+             {
+               T_EnOff(T_iQFeedTimeout);
+               iQSmartLearnNbr[Scale1]++;
+               if(WP.StreamRegConfig != StreamRegAutoRaiseAtEnd && IO_Enable[O_StreamRegulator1]) StreamRegRaise(1);
+               if(!iQFeedStatusFinished[Scale1] && !SlowCycleMem[Scale1])
+                { 
+                 WeighmentAborted[Scale1] = ON;
+                 //FeedCycleCancelled[Scale1] = ON;
+                }
+                ClearAnalogOuts(1);
+              SeqFeeder = stp_FEEDDONE;
+             }
+               
+            }
+            
+            if(SlowCycleMem[Scale1])
+            {
+             if(DischargeHMI1) 
+              {
+               FeedingStop(1);
+               CheckOnce[Scale1] = ON;
+               WeighmentAborted[Scale1] = ON;
+               DischargeHMI1 = OFF;
+              }
+             if(!FeedingStarted) 
+              {
+              GetFillingData(OFF);
+              WeighmentAborted[Scale1] = ON;
+              } 
+                
+            } 
+               
+               
+                
+            break;
+            
+    case stp_FEEDFLASH:
+            if(SeqFeederMEM != SeqFeeder)
+               {
+                 SeqFeederMEM = SeqFeeder;
+                 startcnt=0;
+                 startdelay=0;
+                 startdelay2=0;
+                 feeddelayduration = systemtimer_ms() - feeddelaystart;               
+                 if(iQFeedSettledCnt[Scale1] < IQFEEDSETTLEDNBR || (SampleFreqCnt[Scale1]>=0 && SampleFreqCnt[Scale1]<MP.SampleSize) || CheckAll || LowLevel[Scale1] || EmptyHopper)
+                    iQFeedWaitSettled[Scale1] = ON;
+                 else
+                    iQFeedWaitSettled[Scale1] = OFF;
+                 iQFeedSettledCnt[Scale1]++;   
+                 
+                 if(InitiQFlash[Scale1] || LearniQFlashParam[Scale1]) InitStartiQFlash(1);
+                 else iQOutActivate(1);
+                 scanmemFeeder[0] = systemtimer_ms();
+                 
+                 if(iQFlashLearnNbr[Scale1] < IQFEEDSETTLEDNBR)MessageDisplay(concat(lsub(TX_MSGFEEDING),"...iQFlashLearn"),Step_Message,1);
+                 
+                 
+               }           
+            if(!FeedingStarted)
+                   {
+                   scanmemFeeder[1] = systemtimer_ms();
+                   FeedingStarted = StartFeeding(1);
+                   
+                   if(!T_EN[T_iQFeedTimeout])T_EnOn(T_iQFeedTimeout);
+                   if(T_Dn(T_iQFeedTimeout)) 
+                    {
+                     SystemErrorCode = "#1-123 iQ Flash start timeout";
+                     T_EnOff(T_iQFeedTimeout);
+                    }
+                    
+                   startcnt++; 
+                   scanmemFeeder[2] = systemtimer_ms();
+                   startdelay = scanmemFeeder[2] - scanmemFeeder[0];              
+                   }
+                 
+              
+            if (FeedingStarted)
+            {
+            if(T_EN[T_iQFeedTimeout])T_EnOff(T_iQFeedTimeout);
+            if(IO_State[O_DribbleFeed1] && startdelay2==0) startdelay2 = systemtimer_ms() - scanmemFeeder[2];
+            if(!iQFeedDone[Scale1])
+             {
+              scanmemFeeder[3] = systemtimer_ms();
+              GetFillingData(OFF);
+              scanmemFeeder[4] = systemtimer_ms();
+             }   
+
+            if(iQFeedDone[Scale1])
+              {
+                T_EnOff(T_iQFeedTimeout);
+                iQFlashLearnNbr[Scale1]++;
+                if(!iQFeedStatusFinished[Scale1]  && !SlowCycleMem[Scale1]) 
+                {
+                 //FeedCycleCancelled[Scale1] = ON;
+                 WeighmentAborted[Scale1] = ON;
+                } 
+                 if(LearniQFlashParam[Scale1])
+                  {
+                   if(AutoTune_State != AutoTuneON)
+                    {
+                     AutoTune_State = AutoTuneON; 
+                     AutoTuneStateFlag = Execute;
+                    }
+                  } 
+                 else
+                  {
+                  if(AutoTune_State != AutoTuneOFF)
+                   {
+                    AutoTune_State = AutoTuneOFF; 
+                    AutoTuneStateFlag = Execute;
+                   }
+                  }
+               SeqFeeder = stp_FEEDDONE;
+              }
+             
+            if(SlowCycleMem[Scale1])
+             {
+              if(DischargeHMI1) 
+               {
+                FeedingStop(1);
+                CheckOnce[Scale1] = ON;
+                WeighmentAborted[Scale1] = ON;
+                DischargeHMI1 = OFF;
+               }
+              if(!FeedingStarted) 
+               {
+               GetFillingData(OFF);
+               WeighmentAborted[Scale1] = ON;
+               }
+                
+             }   
+            }   
+            break;
+            
+    case stp_FEEDDONE:
+            if(SeqFeederMEM != SeqFeeder)SeqFeederMEM = SeqFeeder;          
+            if(SeqMaster!=stp_FEED) SeqFeeder = stp_INIT;
+            break;
+            
+  }
+
+                                                 
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_FeedSTD
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Standard Feeder Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_FeedSTD(void)
+{
+bool SlowCycleDone,SlowCycleEndDribble, ResumeInDribble,FirstCycle,BulkDone,DribbleDone,DribbleOnly;
+bool CmpBulkOn1,CmpBulkOn2,Scale1BulkWeightDirect,StandardFeedInitDone;
+int scanmemSTD[10],address;
+float BulkBlankLimit,DribbleBlankLimit,Aout1SwitchValue,DribbleSP,BulkSP;
+if(SeqModeManager == stp_OFF_MODE) 
+ {
+  SeqFeedSTD = stp_INIT;
+  FirstCycle = ON;
+  StandardFeedInitDone = OFF;
+  if(T_EN[T_InitAlgo])T_EnOff(T_InitAlgo);
+ } 
+
+ if(WP.FeedAlgoType == FeedStd || WP.FeedAlgoType == FeediQSim)
+ { 
+  //Slow Cycle Alarm Managment
+  if(SlowCycleMem[Scale1] || CycleInHoldMem[Scale1])
+             {
+              if(!SlowCycleDone)
+               if(DischargeHMI1 || WP.SlowCycleEnd == END_CYCLE) 
+                {
+                 if(CycleInHoldMem[Scale1])
+                 {
+                  UnHoldCycle(1);
+                 }
+                SeqFeedSTD = stp_FSDribbleSetPoint;
+                DribbleDone=ON;
+                CheckOnce[Scale1] = ON;
+                DischargeHMI1 = OFF;
+                SlowCycleDone = ON;
+                WeighmentAborted[Scale1] = ON;
+                }
+               
+              if(WP.SlowCycleEnd == DRIBBLE_CYCLE && !SlowCycleEndDribble)
+                {
+                 if(SeqFeedSTD != stp_FSDribbleSetPoint)
+                 {
+                  FeedSTDReset(1);
+                  SeqFeedSTD = stp_FSDribbleSetPoint;
+                 } 
+                 SlowCycleEndDribble = ON;
+                } 
+             }
+   else  
+             {
+              if(SlowCycleDone) SlowCycleDone = OFF;
+              if(SlowCycleEndDribble) SlowCycleEndDribble = OFF; 
+             }           
+ 
+  //Hold UnHold managment
+  if(SeqFeedSTD != stp_INIT)
+   {
+      
+    if(WP.SlowCycleEnd == HOLD_CYCLE)
+    {  
+     if(SlowCycleMem[Scale1])
+     {
+     if(!CycleInHoldMem[Scale1]) HoldCycleTgl[Scale1] = ON;
+     } 
+    else if(StartHMI && CycleInHoldMem[Scale1])
+     {
+     HoldCycleTgl[Scale1] = ON;
+     }
+    }   
+   
+  
+    if(HoldCycleTgl[Scale1])
+    {    
+     if(!CycleInHoldMem[Scale1])
+      {
+      HoldCycle(1);
+      SeqFeedSTD = stp_FSHold;
+      MessageDisplay(lsub(TX_MSGCYCLEINHOLD),Step_Message,1);
+      }
+     else
+      {
+      ResumeInDribble = UnHoldCycle(1);
+      SeqFeedSTD = stp_INIT;  
+      }
+    }  
+    
+   }
+   
+ } 
+                
+switch (SeqFeedSTD)
+ {
+  case stp_INIT:
+       if(SeqFeedSTDMEM != SeqFeedSTD)
+        {
+         CycleInHoldMem[Scale1] = OFF;
+         HoldCycleTgl[Scale1] = OFF;
+         BulkDone = OFF;
+         DribbleDone = OFF;
+         DribbleOnly = OFF;
+         SeqFeedSTDMEM = SeqFeedSTD;
+        } 
+        
+      if(SeqFeeder == stp_FEEDSTD)
+      {
+         if(FirstCycle)
+          {
+           InitStandardFeed(ON,1);
+           T_EnOn(T_InitAlgo);
+           FirstCycle = OFF;
+          }          
+        
+        if(!StandardFeedInitDone)
+         {
+          if(T_Dn(T_InitAlgo)) //Allow time for weight filter to init when Setting Algorithm
+          {
+           StandardFeedInitDone = ON;
+          }
+         } 
+             
+        if(StandardFeedInitDone)
+        {  
+         if((ResumeInDribble || (WP.BulkCutoff1 == 0 && !BulkOnTime) || (WP.BFTime1 <= 0 && BulkOnTime))&& WP.FeedAlgoType != FeediQSim) //Dribble Feed Only Requested by External Input
+         { 
+         
+          if(IO_Enable[O_CatchGate1]) Output_ON(O_CatchGate1); 
+          if(AOUTActive[AIO1])
+             {
+              if(MC.FeederType != FeederDS)
+               {
+                if(VibrationEnabled)
+                 {
+                  aout(AIO1,GetAoutVibration(1));
+                 }
+                else
+                 {
+                  aout(AIO1,WP.MinFeeding1);
+                 }
+               }
+             }
+            if(AOUTActive[AIO3])
+             {
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO3,WP.MinFeeding1);
+               }
+             }         
+          SeqFeedSTD = stp_FSDribbleBlank;
+          T_EnOn(T_DribbleDuration);
+          ResumeInDribble = OFF;
+          DribbleOnly = ON;
+          break;  
+         }
+        
+         else
+         {  
+          if(IO_Enable[O_CatchGate1]) Output_ON(O_CatchGate1);
+          SeqFeedSTD = stp_FSBulkBlank;
+         }
+         
+        }  
+        else break;
+      }  
+      else break;  
+
+  case stp_FSBulkBlank:
+       if(SeqFeedSTDMEM != SeqFeedSTD) 
+            {
+            SeqFeedSTDMEM = SeqFeedSTD;
+            MessageDisplay(lsub(TX_MSGBULKBLANK),Step_Message,1);
+            T_EnOn(T_BulkDuration);
+            if(BulkOnTime) T_PRE[T_BulkBlankT] = WP.BFTime1;
+            else T_PRE[T_BulkBlankT] = MC.BulkBlankT;
+            T_EnOn(T_BulkBlankT);
+            Output_ON(O_BulkFeed1);
+            if(AOUTActive[AIO1])
+             {
+              if(MC.FeederType == FeederGV)
+              {
+               if(MC.DribbleOutOnInBulk)
+               {
+                aout(AIO1,WP.MinFeeding1);
+               }
+              } 
+              else
+               {
+                aout(AIO1,WP.MaxFeeding1);
+               }
+             }
+            if(AOUTActive[AIO3])
+             {
+              if(MC.FeederType == FeederDS && MC.DribbleOutOnInBulk)
+               {
+                aout(AIO3,WP.MinFeeding1);
+               }
+             }     
+            if(WP.StreamRegConfig != StreamRegLow && IO_Enable[O_StreamRegulator1]) StreamRegRaise(1); 
+            if(MC.DribbleOutOnInBulk)
+                {
+                Output_ON(O_DribbleFeed1);
+                }
+            break;    
+            }
+       
+       if(T_Dn(T_BulkBlankT)|| T_PRE[T_BulkBlankT]==0 || WP.FeedAlgoType == FeediQSim)
+        {
+              T_EnOff(T_BulkBlankT);
+              if(!BulkOnTime)
+               SeqFeedSTD = stp_FSBulkSetPoint;
+              else
+              {
+               Output_OFF(O_BulkFeed1);
+               ProdBulkDuration[Scale1] = T_Acc(T_BulkDuration);
+               T_EnOff(T_BulkDuration);
+               T_EnOn(T_DribbleDuration);
+               SeqFeedSTD = stp_FSDribbleBlank;
+               break;     
+              }
+        } 
+      else break;
+       
+  case stp_FSBulkSetPoint:
+       
+       if(SeqFeedSTDMEM != SeqFeedSTD)
+            {
+            SeqFeedSTDMEM = SeqFeedSTD;
+            MessageDisplay(lsub(TX_MSGBULKFEED),Step_Message,1);
+            T_EnOn(T_BulkDuration);
+            scanmemSTD[0] = systemtimer_ms();
+            if(AOUTActive[AIO1])
+            {
+             if(MC.FeederType != FeederGV)
+              {
+               if(MC.FeederType == FeederDS) Aout1SwitchValue = 0;
+               else Aout1SwitchValue = WP.MinFeeding1;
+               setanalogcomparator (SCALE_NUMBER1, Scale1CmpAout1, AIO1, (WP.BulkCutoff1)*UnitIQtoADM, "<", 1, WP.MaxFeeding1,Aout1SwitchValue ); //Bulk
+              }
+            }  
+            
+            if(IO_Enable[O_BulkFeed1])
+             {
+              if(WP.FeedAlgoType == FeediQSim)
+               BulkSP = BulkCO1*UnitIQtoADM;
+              else
+               BulkSP = (WP.BulkCutoff1)*UnitIQtoADM;
+              setcomparator(SCALE_NUMBER1,Scale1CmpBulk,IO_Address[O_BulkFeed1],BulkSP,"<",1);
+              CmpBulkActive[Scale1] = ON;
+             }
+             else
+             if(IO_Enable[O_CatchGate1])
+             {
+              Scale1BulkWeightDirect = ON;
+             }  
+            scanmemSTD[1] = systemtimer_ms();
+            Output_OFF(O_BulkFeed1);
+           
+                if(MC.DribbleOutOnInBulk)
+                    {                     
+                    Output_ON(O_DribbleFeed1);
+                    }
+            break;
+            } 
+                           
+        if(CmpBulkActive[Scale1] && !tstcomparator(SCALE_NUMBER1,Scale1CmpBulk))
+          {
+           CmpBulkOn1 = ON;
+          }
+        
+        if(Scale1BulkWeightDirect && NetWeight[Scale1] >=(WP.BulkCutoff1))
+          {
+           CmpBulkOn2 = ON;
+          }
+         
+         if(CmpBulkOn1 || CmpBulkOn2)    
+         {
+          CmpBulkOn1 = OFF;
+          CmpBulkOn2 = OFF;
+          Scale1BulkWeightDirect = OFF;
+          CmpBulkActive[Scale1] = OFF;
+          BulkDone=ON;
+          clrcomparator(SCALE_NUMBER1,Scale1CmpBulk);
+         }
+         
+       if(BulkDone)
+       {
+        ProdBulkDuration[Scale1] = T_Acc(T_BulkDuration);
+        T_EnOff(T_BulkDuration);
+        T_EnOn(T_DribbleDuration);
+        SeqFeedSTD = stp_FSDribbleBlank; 
+        BulkDone=OFF;
+        break;
+       }
+       else break;
+               
+      
+  
+  case stp_FSDribbleBlank:
+       if(SeqFeedSTDMEM != SeqFeedSTD) 
+            {
+            SeqFeedSTDMEM = SeqFeedSTD;
+            MessageDisplay(lsub(TX_MSGDRIBBLEBLANK),Step_Message,1);
+            T_EnOn(T_DribbleBlankT);
+            Output_ON(O_DribbleFeed1);
+            if(AOUTActive[AIO1])
+             {
+              if(VibrationEnabled)
+               {
+                clrcomparator(SCALE_NUMBER1,Scale1CmpAout1);
+               }
+              else
+              {
+               if(MC.FeederType == FeederGV && !MC.DribbleOutOnInBulk)
+               {
+                  aout(AIO1,WP.MinFeeding1);
+               }
+               if(MC.FeederType == FeederDS)
+               {
+                  aout(AIO1,0);
+               }  
+              }
+             }
+            if(AOUTActive[AIO3])
+             {
+              if(MC.FeederType == FeederDS && !MC.DribbleOutOnInBulk)
+               {
+                aout(AIO3,WP.MinFeeding1);
+               }
+             }     
+            if(WP.StreamRegConfig != StreamRegHigh) StreamRegLower(1);
+            break;
+            }
+            
+          if(VibrationEnabled)
+           {
+            aout(AIO1,GetAoutVibration(1));
+           }
+             
+      if(T_Dn(T_DribbleBlankT)||T_PRE[T_DribbleBlankT]==0 || WP.FeedAlgoType == FeediQSim)
+           {
+           T_EnOff(T_DribbleBlankT);
+           SeqFeedSTD = stp_FSDribbleSetPoint;
+           }
+      else break;
+         
+  case stp_FSDribbleSetPoint:
+  
+       if(SeqFeedSTDMEM != SeqFeedSTD) 
+       {
+        SeqFeedSTDMEM = SeqFeedSTD;
+        ResumeInDribble = OFF;
+        if(WP.FeedAlgoType == FeediQSim)
+        DribbleSP = TargetWeight[Scale1]*UnitIQtoADM;
+        else
+        DribbleSP = (WP.Cutoff1-CutoffCorrOffset[Scale1])*UnitIQtoADM;
+        
+        if(!DribbleDone)
+        {
+        MessageDisplay(lsub(TX_MSGDRIBBLEFEED),Step_Message,1);
+        if(IO_Enable[O_DribbleFeed1])
+         {
+          setcomparator(SCALE_NUMBER1,Scale1CmpDribble,IO_Address[O_DribbleFeed1],DribbleSP,"<",1);
+          CmpDribbleActive[Scale1] = ON;
+         } 
+        Output_OFF(O_DribbleFeed1);
+       
+        if(IO_Enable[O_CatchGate1])
+         if(WP.CatchGateDelay == 0) 
+          {
+          if(IO_Enable[O_CatchGate1])
+           {
+            setcomparator(SCALE_NUMBER1,Scale1CmpCatchGate,IO_Address[O_CatchGate1],DribbleSP,"<",1);
+            CmpCatchGateActive[Scale1] = ON;
+           } 
+          Output_OFF(O_CatchGate1);
+          }
+       
+         if(SlowCycleEndDribble)
+          {
+           if(AOUTActive[AIO1])
+             {
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO1,0);
+               }
+              else
+               {
+                aout(AIO1,WP.MinFeeding1);
+               }
+             }
+            if(AOUTActive[AIO3])
+             {
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO3,WP.MinFeeding1);
+               }
+             }     
+          }
+           
+        }  
+       }
+       
+       if(VibrationEnabled)
+        {
+         aout(AIO1,GetAoutVibration(1));
+        }
+       
+       if((CmpDribbleActive[Scale1] && !tstcomparator(SCALE_NUMBER1,Scale1CmpDribble)) || (CmpCatchGateActive[Scale1] && !tstcomparator(SCALE_NUMBER1,Scale1CmpCatchGate)) )
+         {
+         if(!IO_Enable[O_CatchGate1] || WP.CatchGateDelay != 0 || (IO_Enable[O_CatchGate1] && CmpCatchGateActive[Scale1] && !tstcomparator(SCALE_NUMBER1,Scale1CmpCatchGate)))
+          {
+          DribbleDone=ON;
+          ProdDribbleDuration[Scale1] = T_Acc(T_DribbleDuration);
+          T_EnOff(T_DribbleDuration);
+          T_EnOff(T_VibrationPeriod);
+          VibrationMem[Scale1] = OFF;
+          if(IO_Enable[O_CatchGate1]) 
+           if(WP.CatchGateDelay == 0)
+            {
+            CmpCatchGateActive[Scale1] = OFF;
+            clrcomparator(SCALE_NUMBER1,Scale1CmpCatchGate);
+            }
+           else 
+            {    
+             T_EnOn(T_CatchGateDelay);
+            }
+          
+          CmpDribbleActive[Scale1] = OFF;    
+          clrcomparator(SCALE_NUMBER1,Scale1CmpDribble);
+          
+          }
+         }      
+        
+       if(DribbleDone)
+       {
+        if(!IO_Enable[O_CatchGate1] || WP.CatchGateDelay == 0 || (WP.CatchGateDelay < CATCHGATEDELAYMAX && (T_Dn(T_CatchGateDelay) || !T_EN[T_CatchGateDelay])) 
+             ||  WP.CatchGateDelay >= CATCHGATEDELAYMAX)
+        {
+        T_EnOff(T_CatchGateDelay);
+        FeedSTDReset(1);
+        SeqFeedSTD = stp_FSDone;
+        }
+        else break;
+       }
+       else break;
+       
+  
+          
+  case stp_FSDone:
+       if(SeqFeedSTDMEM != SeqFeedSTD)
+        {
+        SeqFeedSTDMEM = SeqFeedSTD;
+        if(!BulkOnTime && !DribbleOnly)
+        {
+         BulkBlankLimit = T_PRE[T_BulkBlankT] + 0.15;
+        
+         if(ProdBulkDuration[Scale1] < BulkBlankLimit && WP.FeedAlgoType != FeediQSim)
+          {
+           if(!WeighmentAborted[Scale1])
+            {
+            FaultHandler(FltW_BulkBlankTooLong,"");
+            DisplayAlarmDelay[Scale1] = ON;
+            } 
+           CheckOnce[Scale1] = ON;
+          }
+        }
+        
+        DribbleBlankLimit = T_PRE[T_DribbleBlankT] + 0.15;
+        if(ProdDribbleDuration[Scale1] < DribbleBlankLimit && WP.FeedAlgoType != FeediQSim) 
+         {
+           if(!WeighmentAborted[Scale1])
+           {
+            FaultHandler(FltW_DribbleBlankTooLong,"");
+            DisplayAlarmDelay[Scale1] = ON;
+           } 
+          CheckOnce[Scale1] = ON;
+         }
+         if(WP.StreamRegConfig == StreamRegAutoRaiseAtEnd && IO_Enable[O_StreamRegulator1]) 
+          StreamRegRaise(1);
+        }
+       if(DribbleDone && SeqFeeder == stp_FEEDDONE)
+             {
+             DribbleDone=OFF;
+             SeqFeedSTD = stp_INIT;
+             }
+       break;
+       
+  case stp_FSHold:
+       if(SeqFeedSTDMEM != SeqFeedSTD)SeqFeedSTDMEM = SeqFeedSTD;
+       break;     
+ }
+}
+
+
+
+            
+            
+            
+            
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_WeighPan
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Weighing Pan Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_WeighPan(void)
+{
+if(SeqModeManager == stp_OFF_MODE) SeqWeighPan = stp_INIT;
+
+switch (SeqWeighPan)
+       {
+       case stp_INIT:
+            if(SeqWeighPanMEM != SeqWeighPan)SeqWeighPanMEM = SeqWeighPan;
+            if(SeqMaster == stp_DISCHARGING)SeqWeighPan = stp_OPENDOORS;
+            else break;
+            
+       case stp_OPENDOORS:
+            if(SeqWeighPan!=SeqWeighPanMEM)
+            {
+            SeqWeighPanMEM = SeqWeighPan;
+            if(WP.DischargeTime>0) {MessageDisplay(lsub(TX_MSGDISCHARGEONTIME),Step_Message,1);T_EnOn(T_DischargeTime);}
+            if(!IO_Enable[O_DischDoor12])
+             {
+              Output_ON(O_DischDoor1);
+             }
+            else 
+             {
+              if(WP.DischDoorMode == DDSmall || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor1);
+              if(WP.DischDoorMode == DDMedium || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor12); 
+             }
+            
+            if(WP.FeedAlgoType == FeediQSim) 
+              {
+               iQSimDischarge(1);
+              }
+            
+            if(WeighmentInPan[Scale1] && WeighPerUnitDone) Output_ON(O_ExternalBagCounter);
+            KnockHammerFlag = ON;
+            WeighmentInPan[Scale1] = OFF;
+            if(!IO_Enable[I_DischDoorClose1] || !MC.DischOnDoorSensor)
+             if(WeighPerUnitDone)
+               Output_ON(O_Discharge);
+            if(WP.VibratoryDischDoors)Output_ON(O_VibrDischDoor1);
+            break;
+            }
+            if(IO_Enable[I_DischDoorClose1]&& MC.DischOnDoorSensor &&!Input_State(I_DischDoorClose1)&&!IO_State[O_Discharge])
+             if(WeighPerUnitDone)
+                Output_ON(O_Discharge);
+            if(T_Dn(T_DischargeTime))
+             {
+              MessageDisplay(lsub(TX_MSGDISCHARGEONWEIGHT),Step_Message,1);
+             }
+            else
+             {
+              if(T_Acc(T_DischargeTime) > (T_PRE[T_DischargeTime] - Open2ndDoorLastPart))
+               {
+                 if(WP.DischDoorMode == DDSmall)
+                   Output_ON(O_DischDoor12);
+                 if(WP.DischDoorMode == DDMedium)
+                  Output_ON(O_DischDoor1);
+               }
+             }     
+            if((WP.DischargeTime==0 || T_Dn(T_DischargeTime)) && (WP.DischargeWeight == WP.NominalWeight || NetWeight[Scale1]< WP.DischargeWeight))
+            {
+               T_EnOff(T_DischargeTime);
+               if ((ZeroFreqCnt[Scale1] == 0 || (WP.FeedAlgoType != FeediQSim && (LowLevel[Scale1] || EmptyHopper)))&& !AutoZeroOff && WP.ZeroingOpen)
+                {
+                SetZeroStatus[Scale1]=-1;
+                SeqMaster = stp_ZERO; 
+                break;
+                }
+               else SeqWeighPan = stp_CLOSEDOORS;
+            }
+            else break;
+            
+       case stp_CLOSEDOORS:
+            if(SeqWeighPanMEM!=SeqWeighPan)
+            {
+            if(WP.FeedAlgoType == FeediQSim) iQSimStopProgram (SCALE_CHANNEL1, SCALE_NUMBER1);
+            SeqWeighPanMEM = SeqWeighPan;
+            Output_OFF(O_DischDoor1);
+            Output_OFF(O_DischDoor12);
+            Output_OFF(O_Discharge);
+            if(WeighPerUnitDone && MC.CFGBagHolder==0) Discharged(1);
+            Output_OFF(O_ExternalBagCounter);
+            KnockHammerFlag = OFF;
+            if(WP.VibratoryDischDoors)Output_OFF(O_VibrDischDoor1);
+            break;
+            }
+            if(SeqMaster != stp_DISCHARGING && SeqMaster != stp_ZERO)SeqWeighPan = stp_INIT;
+            
+       }
+
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_2Feeder
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Feeder Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_2Feeder(void)
+{
+ bool FeedingStarted,BulkFeedMem,DribbleFeedMem,Aout2On,Aout4On;
+ int scanmemFeeder[10],startcnt,startdelay,startdelay2;
+ if(SeqModeManager == stp_OFF_MODE) Seq2Feeder = stp_INIT;
+
+ if(SeqFeeder != stp_INIT)
+ {  
+  if(IO_State[O_BulkFeed2] || IO_State[O_DribbleFeed2] || IO_State[O_CatchGate2])
+   {
+     if(!T_EN[T_AbnormalFeed2] && ProdBulkDuration[Scale2] > 0) 
+     { 
+      T_PRE[T_AbnormalFeed2] = ProdBulkDuration[Scale2];
+      T_EnOn(T_AbnormalFeed2);
+     } 
+    
+     if(T_Dn(T_AbnormalFeed2) && (NetWeight[Scale2] < (WP.BulkCutoff2 *0.5)) && !CheckOnce[Scale2]) 
+      CheckOnce[Scale2] = ON;
+   } 
+ }
+   
+if(Seq2Master==stp_FEED && Seq2Feeder==stp_INIT)
+      { 
+      switch(WP.FeedAlgoType)
+        {
+        case FeedStd:
+                 Seq2Feeder = stp_FEEDSTD;break;
+        case FeediQSim:
+                 Seq2Feeder = stp_FEEDSTD;break;         
+        case FeediQSmart:
+                 Seq2Feeder = stp_FEEDSMART;break;     
+        case FeediQFlash:
+                 Seq2Feeder = stp_FEEDFLASH;break;
+        default:   
+                 Seq2Feeder = stp_FEEDSTD;break;             
+       }
+      }
+
+  switch (Seq2Feeder)
+  {
+    case stp_INIT:
+            if(Seq2Feeder!=Seq2FeederMEM) 
+              {
+              Seq2FeederMEM = Seq2Feeder;
+              iQFeedDone[Scale2] = OFF;
+              FeedingStarted = OFF;
+              FeedCycleCancelled[Scale2] = OFF;
+              //EmptyBuffer();
+              BulkFeedMem = OFF;
+              DribbleFeedMem = OFF;
+              T_EnOff(T_AbnormalFeed2);
+              }
+            break;
+            
+    case stp_FEEDSTD:
+            if(Seq2FeederMEM != Seq2Feeder)
+             {
+              Seq2FeederMEM = Seq2Feeder;
+              if(WP.FeedAlgoType == FeediQSim) 
+               {
+                 iQSimFeed(2);
+               } 
+             }
+            if(Seq2FeedSTD == stp_FSDone)
+             {
+             if(WP.FeedAlgoType == FeediQSim) iQSimStopProgram (SCALE_CHANNEL2, SCALE_NUMBER2);
+             Seq2Feeder = stp_FEEDDONE;
+             }
+            break;
+                                                                                              
+    case stp_FEEDSMART:
+            if(Seq2FeederMEM != Seq2Feeder)
+               {
+                 Seq2FeederMEM = Seq2Feeder;
+                 Aout2On = OFF;
+                 Aout4On = OFF;
+                 startcnt=0;
+                 startdelay=0;
+                 startdelay2=0;
+                 feeddelayduration = systemtimer_ms() - feeddelaystart;
+                 if(iQFeedSettledCnt[Scale2] < IQFEEDSETTLEDNBR || (SampleFreqCnt[Scale2]>=0 && SampleFreqCnt[Scale2]<MP.SampleSize) || CheckAll || LowLevel[Scale2] || EmptyHopper)
+                    iQFeedWaitSettled[Scale2] = ON;
+                 else
+                    iQFeedWaitSettled[Scale2] = OFF;
+                 iQFeedSettledCnt[Scale2]++;
+                 
+                 if(InitiQSmart[Scale2] || LearniQSmartParam[Scale2] || LearniQSmartParamMem[Scale2]) InitStartiQSmart(2);
+                 else 
+                  {
+                   iQOutActivate(2);
+                   if(InitCPSmSwitchTime[Scale2])
+                    {
+                      SmSetControlParameters(2);
+                    }
+                  }
+                 
+                 if(iQSmartLearnNbr[Scale2] < IQFEEDSETTLEDNBR)MessageDisplay(concat(lsub(TX_MSGFEEDING),"...iQSmartLearn"),Step_Message,2);
+                 
+                 if(LearniQSmartParam[Scale2])
+                  {
+                   if(AutoTune_State != AutoTuneON)
+                    {
+                     AutoTune_State = AutoTuneON; 
+                     AutoTuneStateFlag = Execute;
+                    }
+                  } 
+                 else
+                  {
+                  if(AutoTune_State != AutoTuneOFF)
+                   {
+                    AutoTune_State = AutoTuneOFF; 
+                    AutoTuneStateFlag = Execute;
+                   }
+                  }
+                 scanmemFeeder[0] = systemtimer_ms();
+               }           
+            
+            if(AOUTActive[AIO2]  && !Aout2On)
+              if(MC.FeederType == FeederGV)
+                if(MC.DribbleOutOnInBulk || out(IO_Address[O_DribbleFeed2]))
+                 {
+                  aout(AIO2,WP.MinFeeding2);
+                  Aout2On = ON;
+                 }
+             
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO2,WP.MaxFeeding2);
+                Aout2On = ON;
+               }
+             
+             if(AOUTActive[AIO4] && !Aout4On)
+              if(MC.FeederType == FeederDS)
+               if(MC.DribbleOutOnInBulk || out(IO_Address[O_DribbleFeed2]))
+                {
+                aout(AIO4,WP.MinFeeding2);
+                Aout4On = ON;
+                }
+            
+            if(!FeedingStarted)
+            
+                {
+                 if(WP.StreamRegConfig != StreamRegLow && IO_Enable[O_StreamRegulator2]) StreamRegRaise(2);
+                    
+                 if(T_Dn(T_StreamRegHigh2) || WP.StreamRegConfig == StreamRegLow || WP.StreamRegConfig == StreamRegAutoRaiseAtRun  || !IO_Enable[O_StreamRegulator2])
+                   {
+                   scanmemFeeder[1] = systemtimer_ms();
+                   FeedingStarted = StartFeeding(2);
+                   
+                   if(!T_EN[T_iQFeedTimeout2])T_EnOn(T_iQFeedTimeout2);
+                   
+                   if(T_Dn(T_iQFeedTimeout2)) 
+                   {
+                    SystemErrorCode = "#2-133 iQ Smart start timeout";
+                    T_EnOff(T_iQFeedTimeout2);
+                   }
+                   
+                   startcnt++; 
+                   scanmemFeeder[2] = systemtimer_ms();
+                   startdelay = scanmemFeeder[2] - scanmemFeeder[0];
+                   }
+                } 
+            
+            
+                  
+            if (FeedingStarted)
+            {
+             if(T_EN[T_iQFeedTimeout2])T_EnOff(T_iQFeedTimeout2);
+             if(IO_State[O_DribbleFeed2] && startdelay2==0) startdelay2 = systemtimer_ms() - scanmemFeeder[2];
+            if(!iQFeedDone[Scale2])
+             {
+              scanmemFeeder[3] = systemtimer_ms();
+              GetFillingData(OFF);
+              scanmemFeeder[4] = systemtimer_ms();
+             }   
+
+              
+             if(WP.StreamRegConfig == StreamRegAutoRaiseAtEnd || WP.StreamRegConfig == StreamRegAutoRaiseAtRun)
+              {
+               if(!BulkFeedMem)
+               { 
+                if((!FeederBWithAout[Scale2] && IO_Enable[O_BulkFeed2] && out(IO_Address[O_BulkFeed2])) || (FeederBWithAout[Scale2] && out(BULK2ADDRESS)))
+                 {
+                   BulkFeedMem = ON;
+                 }
+               }  
+               
+               else
+               {
+                if(!DribbleFeedMem)
+                {
+                 if((!FeederBWithAout[Scale2] && IO_Enable[O_BulkFeed2] && !out(IO_Address[O_BulkFeed2])) || (FeederBWithAout[Scale2] && !out(BULK2ADDRESS)))
+                  {  
+                  StreamRegLower(2);
+                  DribbleFeedMem = ON;
+                  }
+                }
+               }   
+              }    
+
+              
+                  
+            if(iQFeedDone[Scale2])
+               {
+               T_EnOff(T_iQFeedTimeout2);
+               iQSmartLearnNbr[Scale2]++;
+               if(WP.StreamRegConfig != StreamRegAutoRaiseAtEnd && IO_Enable[O_StreamRegulator2]) StreamRegRaise(2);
+               if(!iQFeedStatusFinished[Scale2] && !SlowCycleMem[Scale2])
+                { 
+                 WeighmentAborted[Scale2] = ON;
+                 //FeedCycleCancelled[Scale2] = ON;
+                }
+                ClearAnalogOuts(2);                          
+                Seq2Feeder = stp_FEEDDONE;
+               }
+               
+            }
+            
+            if(SlowCycleMem[Scale2])
+            {
+             if(DischargeHMI2) 
+              {
+               FeedingStop(2);
+               CheckOnce[Scale2] = ON;
+               WeighmentAborted[Scale2] = ON;
+               DischargeHMI2 = OFF;
+              }
+             if(!FeedingStarted) 
+              {
+              GetFillingData(OFF);
+              WeighmentAborted[Scale2] = ON;
+              } 
+                
+            } 
+               
+               
+                
+            break;
+            
+    case stp_FEEDFLASH:
+            if(Seq2FeederMEM != Seq2Feeder)
+               {
+                 Seq2FeederMEM = Seq2Feeder;
+                 startcnt=0;
+                 startdelay=0;
+                 startdelay2=0;
+                 feeddelayduration = systemtimer_ms() - feeddelaystart;               
+                 if(iQFeedSettledCnt[Scale2] < IQFEEDSETTLEDNBR || (SampleFreqCnt[Scale2]>=0 && SampleFreqCnt[Scale2]<MP.SampleSize) || CheckAll || LowLevel[Scale2] || EmptyHopper)
+                    iQFeedWaitSettled[Scale2] = ON;
+                 else
+                    iQFeedWaitSettled[Scale2] = OFF;
+                 iQFeedSettledCnt[Scale2]++;   
+                 
+                 if(InitiQFlash[Scale2] || LearniQFlashParam[Scale2]) InitStartiQFlash(2);
+                 else iQOutActivate(2);
+                 scanmemFeeder[0] = systemtimer_ms();
+                 
+                 if(iQFlashLearnNbr[Scale2] < IQFEEDSETTLEDNBR)MessageDisplay(concat(lsub(TX_MSGFEEDING),"...iQFlashLearn"),Step_Message,2);
+                 
+                 
+               }           
+            if(!FeedingStarted)
+                   {
+                   scanmemFeeder[1] = systemtimer_ms();
+                   FeedingStarted = StartFeeding(2);
+                   
+                   if(!T_EN[T_iQFeedTimeout2])T_EnOn(T_iQFeedTimeout2);
+                   if(T_Dn(T_iQFeedTimeout2)) 
+                    {
+                     SystemErrorCode = "#2-123 iQ Flash start timeout";
+                     T_EnOff(T_iQFeedTimeout2);
+                    }
+                    
+                   startcnt++; 
+                   scanmemFeeder[2] = systemtimer_ms();
+                   startdelay = scanmemFeeder[2] - scanmemFeeder[0];              
+                   }
+                 
+              
+            if (FeedingStarted)
+            {
+            if(T_EN[T_iQFeedTimeout2])T_EnOff(T_iQFeedTimeout2);
+            if(IO_State[O_DribbleFeed2] && startdelay2==0) startdelay2 = systemtimer_ms() - scanmemFeeder[2];
+            if(!iQFeedDone[Scale2])
+             {
+              scanmemFeeder[3] = systemtimer_ms();
+              GetFillingData(OFF);
+              scanmemFeeder[4] = systemtimer_ms();
+             }   
+
+            if(iQFeedDone[Scale2])
+               {
+                T_EnOff(T_iQFeedTimeout2);
+                iQFlashLearnNbr[Scale2]++;
+                if(!iQFeedStatusFinished[Scale2]  && !SlowCycleMem[Scale2]) 
+                {
+                 //FeedCycleCancelled[Scale2] = ON;
+                 WeighmentAborted[Scale2] = ON;
+                } 
+                 if(LearniQFlashParam[Scale2])
+                  {
+                   if(AutoTune_State != AutoTuneON)
+                    {
+                     AutoTune_State = AutoTuneON; 
+                     AutoTuneStateFlag = Execute;
+                    }
+                  } 
+                 else
+                  {
+                  if(AutoTune_State != AutoTuneOFF)
+                   {
+                    AutoTune_State = AutoTuneOFF; 
+                    AutoTuneStateFlag = Execute;
+                   }
+                  }
+               Seq2Feeder = stp_FEEDDONE;
+               }
+             
+            if(SlowCycleMem[Scale2])
+             {
+              if(DischargeHMI2) 
+               {
+                FeedingStop(2);
+                CheckOnce[Scale2] = ON;
+                WeighmentAborted[Scale2] = ON;
+                DischargeHMI2 = OFF;
+               }
+              if(!FeedingStarted) 
+               {
+               GetFillingData(OFF);
+               WeighmentAborted[Scale2] = ON;
+               }
+                
+             }   
+            }   
+            break;
+            
+    case stp_FEEDDONE:
+            if(Seq2FeederMEM != Seq2Feeder)Seq2FeederMEM = Seq2Feeder;          
+            if(Seq2Master!=stp_FEED) Seq2Feeder = stp_INIT;
+            break;
+            
+  }
+
+                                                 
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_2FeedSTD
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Standard Feeder Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_2FeedSTD(void)
+{
+bool SlowCycleDone,SlowCycleEndDribble, ResumeInDribble,FirstCycle,BulkDone,DribbleDone,DribbleOnly;
+bool CmpBulkOn1,CmpBulkOn2,Scale2BulkWeightDirect,StandardFeedInitDone;
+int scanmemSTD[10],address;
+float BulkBlankLimit,DribbleBlankLimit,Aout2SwitchValue,DribbleSP,TargetSP;
+if(SeqModeManager == stp_OFF_MODE) 
+ {
+  Seq2FeedSTD = stp_INIT;
+  FirstCycle = ON;
+  StandardFeedInitDone = OFF;
+  if(T_EN[T_InitAlgo2])T_EnOff(T_InitAlgo2);
+ } 
+
+ if(WP.FeedAlgoType == FeedStd || WP.FeedAlgoType == FeediQSim)
+ { 
+  //Slow Cycle Alarm Managment
+  if(SlowCycleMem[Scale2] || CycleInHoldMem[Scale2])
+             {
+              if(!SlowCycleDone)
+               if(DischargeHMI2 || WP.SlowCycleEnd == END_CYCLE) 
+                {
+                if(CycleInHoldMem[Scale2])
+                 {
+                  UnHoldCycle(2);
+                 }
+                Seq2FeedSTD = stp_FSDribbleSetPoint;
+                DribbleDone=ON;
+                CheckOnce[Scale2] = ON;
+                DischargeHMI2 = OFF;
+                SlowCycleDone = ON;
+                WeighmentAborted[Scale2] = ON;
+                }
+               
+              if(WP.SlowCycleEnd == DRIBBLE_CYCLE && !SlowCycleEndDribble)
+                {
+                 if(Seq2FeedSTD != stp_FSDribbleSetPoint)
+                 {
+                  FeedSTDReset(2);
+                  Seq2FeedSTD = stp_FSDribbleSetPoint;
+                 } 
+                 SlowCycleEndDribble = ON;
+                } 
+             }
+   else  
+             {
+              if(SlowCycleDone) SlowCycleDone = OFF;
+              if(SlowCycleEndDribble) SlowCycleEndDribble = OFF; 
+             }           
+ 
+  //Hold UnHold managment
+  if(Seq2FeedSTD != stp_INIT)
+   {
+      
+    if(WP.SlowCycleEnd == HOLD_CYCLE)
+    {  
+     if(SlowCycleMem[Scale2])
+     {
+     if(!CycleInHoldMem[Scale2]) HoldCycleTgl[Scale2] = ON;
+     } 
+    else if(StartHMI && CycleInHoldMem[Scale2])
+     {
+     HoldCycleTgl[Scale2] = ON;
+     }
+    }   
+   
+  
+    if(HoldCycleTgl[Scale2])
+    {    
+     if(!CycleInHoldMem[Scale2])
+      {
+      HoldCycle(2);
+      Seq2FeedSTD = stp_FSHold;
+      MessageDisplay(lsub(TX_MSGCYCLEINHOLD),Step_Message,2);
+      }
+     else
+      {
+      ResumeInDribble = UnHoldCycle(2);
+      Seq2FeedSTD = stp_INIT;  
+      }
+    }  
+    
+   }
+   
+ } 
+                
+switch (Seq2FeedSTD)
+ {
+  case stp_INIT:
+       if(Seq2FeedSTDMEM != Seq2FeedSTD)
+        {
+         CycleInHoldMem[Scale2] = OFF;
+         HoldCycleTgl[Scale2] = OFF;
+         BulkDone = OFF;
+         DribbleDone = OFF;
+         DribbleOnly = OFF;
+         Seq2FeedSTDMEM = Seq2FeedSTD;
+        } 
+        
+      if(Seq2Feeder == stp_FEEDSTD)
+      {
+         if(FirstCycle)
+          {
+           InitStandardFeed(ON,2);
+           T_EnOn(T_InitAlgo2);
+           FirstCycle = OFF;
+          }          
+        
+         if(!StandardFeedInitDone)
+         {
+          if(T_Dn(T_InitAlgo2)) //Allow time for weight filter to init when Setting Algorithm
+          {
+           StandardFeedInitDone = ON;
+          }
+         } 
+             
+        if(StandardFeedInitDone)
+        {  
+         if(ResumeInDribble || (WP.BulkCutoff2 == 0 && !BulkOnTime) || (WP.BFTime2 <= 0 && BulkOnTime)) //Dribble Feed Only Requested by External Input
+         { 
+         
+          if(IO_Enable[O_CatchGate2]) Output_ON(O_CatchGate2); 
+          if(AOUTActive[AIO2])
+             {
+              if(MC.FeederType != FeederDS)
+               {
+                if(VibrationEnabled)
+                 {
+                  aout(AIO2,GetAoutVibration(2));
+                 }
+                else
+                 {
+                  aout(AIO2,WP.MinFeeding2);
+                 }
+               }
+             }
+            if(AOUTActive[AIO4])
+             {
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO4,WP.MinFeeding2);
+               }
+             }         
+          Seq2FeedSTD = stp_FSDribbleBlank;
+          T_EnOn(T_DribbleDuration2);
+          ResumeInDribble = OFF;
+          DribbleOnly = ON;
+          break;  
+         }
+        
+         else
+         {  
+          if(IO_Enable[O_CatchGate2]) Output_ON(O_CatchGate2);
+          Seq2FeedSTD = stp_FSBulkBlank;
+         }
+        }  
+        else break;
+      }  
+      else break;
+
+  case stp_FSBulkBlank:
+       if(Seq2FeedSTDMEM != Seq2FeedSTD) 
+            {
+            Seq2FeedSTDMEM = Seq2FeedSTD;
+            MessageDisplay(lsub(TX_MSGBULKBLANK),Step_Message,2);
+            T_EnOn(T_BulkDuration2);
+            if(BulkOnTime) T_PRE[T_BulkBlankT2] = WP.BFTime2;
+            else T_PRE[T_BulkBlankT2] = MC.BulkBlankT;
+            T_EnOn(T_BulkBlankT2);
+            Output_ON(O_BulkFeed2);
+            
+              if(AOUTActive[AIO2])
+              {
+               if(MC.FeederType == FeederGV)
+               {
+                if(MC.DribbleOutOnInBulk)
+                {
+                 aout(AIO2,WP.MinFeeding2);
+                }
+               } 
+               else
+                {
+                 aout(AIO2,WP.MaxFeeding2);
+                }
+              }
+              
+              if(AOUTActive[AIO4])
+              {
+               if(MC.DribbleOutOnInBulk)
+               {
+                aout(AIO4,WP.MinFeeding2);
+               }
+              }
+              
+                  
+             if(WP.StreamRegConfig != StreamRegLow && IO_Enable[O_StreamRegulator2]) 
+               StreamRegRaise(2); 
+               
+             if(MC.DribbleOutOnInBulk)
+                {
+                Output_ON(O_DribbleFeed2);
+                }
+             break;    
+            }
+       if(T_Dn(T_BulkBlankT2)|| T_PRE[T_BulkBlankT2]==0 || WP.FeedAlgoType == FeediQSim)
+       
+           {
+              T_EnOff(T_BulkBlankT2);
+              if(!BulkOnTime)
+               Seq2FeedSTD = stp_FSBulkSetPoint;
+              else
+              {
+               Output_OFF(O_BulkFeed2);
+               ProdBulkDuration[Scale2] = T_Acc(T_BulkDuration2);
+               T_EnOff(T_BulkDuration2);
+               T_EnOn(T_DribbleDuration2);
+               Seq2FeedSTD = stp_FSDribbleBlank;
+               break;     
+              }
+           } 
+      else break;
+       
+  case stp_FSBulkSetPoint:
+       
+       if(Seq2FeedSTDMEM != Seq2FeedSTD)
+            {
+            Seq2FeedSTDMEM = Seq2FeedSTD;
+            MessageDisplay(lsub(TX_MSGBULKFEED),Step_Message,2);
+            T_EnOn(T_BulkDuration2);
+            scanmemSTD[0] = systemtimer_ms();
+            
+             if(AOUTActive[AIO2])
+             { 
+              if(MC.FeederType != FeederGV)
+              {
+               if(MC.FeederType == FeederDS) 
+                 Aout2SwitchValue = 0;
+               else 
+                 Aout2SwitchValue = WP.MinFeeding2;
+                 
+                 setanalogcomparator (SCALE_NUMBER2, Scale2CmpAout1, AIO2, (WP.BulkCutoff2)*UnitIQtoADM, "<", 1, WP.MaxFeeding2,Aout2SwitchValue ); //Bulk
+              }
+             } 
+            
+            if(IO_Enable[O_BulkFeed2])
+             {
+              setcomparator(SCALE_NUMBER2,Scale2CmpBulk,IO_Address[O_BulkFeed2],(WP.BulkCutoff2)*UnitIQtoADM,"<",1);
+              CmpBulkActive[Scale2] = ON;
+             }
+             else
+             if(IO_Enable[O_CatchGate2])
+             {
+              Scale2BulkWeightDirect = ON;
+             }  
+            scanmemSTD[1] = systemtimer_ms();
+            Output_OFF(O_BulkFeed2);
+           
+                if(MC.DribbleOutOnInBulk)
+                    {                     
+                    Output_ON(O_DribbleFeed2);
+                    }
+            break;
+            } 
+                           
+        if(CmpBulkActive[Scale2] && !tstcomparator(SCALE_NUMBER2,Scale2CmpBulk))
+          {
+           CmpBulkOn1 = ON;
+          }
+        
+        if(Scale2BulkWeightDirect && NetWeight[Scale2] >=(WP.BulkCutoff2))
+          {
+           CmpBulkOn2 = ON;
+          }
+         
+         if(CmpBulkOn1 || CmpBulkOn2)    
+         {
+          CmpBulkOn1 = OFF;
+          CmpBulkOn2 = OFF;
+          Scale2BulkWeightDirect = OFF;
+          CmpBulkActive[Scale2] = OFF;
+          BulkDone=ON;
+          clrcomparator(SCALE_NUMBER2,Scale2CmpBulk);
+         }
+         
+       if(BulkDone)
+       {
+        ProdBulkDuration[Scale2] = T_Acc(T_BulkDuration2);
+        T_EnOff(T_BulkDuration2);
+        T_EnOn(T_DribbleDuration2);
+        Seq2FeedSTD = stp_FSDribbleBlank; 
+        BulkDone=OFF;
+        break;
+       }
+       else break;
+               
+      
+  
+  case stp_FSDribbleBlank:
+       if(Seq2FeedSTDMEM != Seq2FeedSTD) 
+            {
+            Seq2FeedSTDMEM = Seq2FeedSTD;
+            MessageDisplay(lsub(TX_MSGDRIBBLEBLANK),Step_Message,2);
+            T_EnOn(T_DribbleBlankT2);
+            Output_ON(O_DribbleFeed2);
+            
+            if(AOUTActive[AIO2])
+             {
+              if(VibrationEnabled)
+               {
+                clrcomparator(SCALE_NUMBER2,Scale1CmpAout2);
+               }
+              else
+              {
+               if(MC.FeederType == FeederGV && !MC.DribbleOutOnInBulk)
+               {
+                  aout(AIO2,WP.MinFeeding2);
+               }
+               if(MC.FeederType == FeederDS)
+               {
+                  aout(AIO2,0);
+               }  
+              }
+             } 
+             
+            if(AOUTActive[AIO4])
+             {
+              if(MC.FeederType == FeederDS && !MC.DribbleOutOnInBulk)
+               {
+                aout(AIO4,WP.MinFeeding2);
+               }
+             } 
+              
+            if(WP.StreamRegConfig != StreamRegHigh) StreamRegLower(2);
+            break;
+            }
+            
+          if(VibrationEnabled)
+           {
+            aout(AIO2,GetAoutVibration(2));
+           }
+
+      if(T_Dn(T_DribbleBlankT2)||T_PRE[T_DribbleBlankT2]==0 || WP.FeedAlgoType == FeediQSim)
+           {
+           T_EnOff(T_DribbleBlankT2);
+           Seq2FeedSTD = stp_FSDribbleSetPoint;
+           }
+      else break;
+         
+  case stp_FSDribbleSetPoint:
+  
+       if(Seq2FeedSTDMEM != Seq2FeedSTD) 
+       {
+       Seq2FeedSTDMEM = Seq2FeedSTD;
+       ResumeInDribble = OFF;
+       DribbleSP = (WP.Cutoff2-CutoffCorrOffset[Scale2])*UnitIQtoADM;
+        if(WP.FeedAlgoType == FeediQSim)
+          {
+           TargetSP = TargetWeight[Scale2]*UnitIQtoADM;
+           if (DribbleSP >= TargetSP)
+            {
+             DribbleSP = TargetSP - 0.1;
+            }
+          }   
+       if(!DribbleDone)
+        {
+        MessageDisplay(lsub(TX_MSGDRIBBLEFEED),Step_Message,2);
+        if(IO_Enable[O_DribbleFeed2])
+         {
+          setcomparator(SCALE_NUMBER2,Scale2CmpDribble,IO_Address[O_DribbleFeed2],DribbleSP,"<",1);
+          CmpDribbleActive[Scale2] = ON;
+         } 
+        Output_OFF(O_DribbleFeed2);
+       
+        if(IO_Enable[O_CatchGate2])
+         if(WP.CatchGateDelay == 0) 
+          {
+          if(IO_Enable[O_CatchGate2])
+           {
+            setcomparator(SCALE_NUMBER2,Scale2CmpCatchGate,IO_Address[O_CatchGate2],DribbleSP,"<",1);
+            CmpCatchGateActive[Scale2] = ON;
+           } 
+          Output_OFF(O_CatchGate2);
+          }
+       
+         if(SlowCycleEndDribble)
+          {
+           if(AOUTActive[AIO2])
+             {
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO2,0);
+               }
+              else
+               {
+                aout(AIO2,WP.MinFeeding2);
+               }
+             }
+            if(AOUTActive[AIO4])
+             {
+              if(MC.FeederType == FeederDS)
+               {
+                aout(AIO4,WP.MinFeeding2);
+               }
+             }     
+          }
+           
+        }  
+       }
+       
+       if(VibrationEnabled)
+        {
+         aout(AIO2,GetAoutVibration(2));
+        }
+        
+       if((CmpDribbleActive[Scale2] && !tstcomparator(SCALE_NUMBER2,Scale2CmpDribble)) || (CmpCatchGateActive[Scale2] && !tstcomparator(SCALE_NUMBER2,Scale2CmpCatchGate)) )
+         {
+         if(!IO_Enable[O_CatchGate2] || WP.CatchGateDelay != 0 || (IO_Enable[O_CatchGate2] && CmpCatchGateActive[Scale2] && !tstcomparator(SCALE_NUMBER2,Scale2CmpCatchGate)))
+          {
+          DribbleDone=ON;
+          ProdDribbleDuration[Scale2] = T_Acc(T_DribbleDuration2);
+          T_EnOff(T_DribbleDuration2);
+          T_EnOff(T_VibrationPeriod2);
+          VibrationMem[Scale2] = OFF;
+          if(IO_Enable[O_CatchGate2]) 
+           if(WP.CatchGateDelay == 0)
+            {
+            CmpCatchGateActive[Scale2] = OFF;
+            clrcomparator(SCALE_NUMBER2,Scale2CmpCatchGate);
+            }
+           else 
+            {    
+             T_EnOn(T_CatchGateDelay2);
+            }
+          
+          CmpDribbleActive[Scale2] = OFF;    
+          clrcomparator(SCALE_NUMBER2,Scale2CmpDribble);
+          
+          }
+         }      
+        
+       if(DribbleDone)
+       {
+        if(!IO_Enable[O_CatchGate2] || WP.CatchGateDelay == 0 || (WP.CatchGateDelay < CATCHGATEDELAYMAX && (T_Dn(T_CatchGateDelay2) || !T_EN[T_CatchGateDelay2])) 
+             ||  WP.CatchGateDelay >= CATCHGATEDELAYMAX)
+        {
+        T_EnOff(T_CatchGateDelay2);
+        FeedSTDReset(2);
+        Seq2FeedSTD = stp_FSDone;
+        }
+        else break;
+       }
+       else break;
+       
+  
+          
+  case stp_FSDone:
+       if(Seq2FeedSTDMEM != Seq2FeedSTD)
+        {
+        Seq2FeedSTDMEM = Seq2FeedSTD;
+        if(!BulkOnTime && !DribbleOnly)
+        {
+         BulkBlankLimit = T_PRE[T_BulkBlankT2] + 0.15;
+        
+         if(ProdBulkDuration[Scale2] < BulkBlankLimit && WP.FeedAlgoType != FeediQSim)
+          {
+           if(!WeighmentAborted[Scale2])
+            {
+            FaultHandler(FltW_BulkBlankTooLong2,"");
+            DisplayAlarmDelay[Scale2] = ON;
+            } 
+           CheckOnce[Scale2] = ON;
+          }
+        }
+        
+        DribbleBlankLimit = T_PRE[T_DribbleBlankT2] + 0.15;
+        if(ProdDribbleDuration[Scale2] < DribbleBlankLimit && WP.FeedAlgoType != FeediQSim) 
+         {
+           if(!WeighmentAborted[Scale2])
+           {
+            FaultHandler(FltW_DribbleBlankTooLong2,"");
+            DisplayAlarmDelay[Scale2] = ON;
+           } 
+          CheckOnce[Scale2] = ON;
+         }
+         if(WP.StreamRegConfig == StreamRegAutoRaiseAtEnd && IO_Enable[O_StreamRegulator2]) 
+          StreamRegRaise(2);
+        }
+       if(DribbleDone && Seq2Feeder == stp_FEEDDONE)
+             {
+             DribbleDone=OFF;
+             Seq2FeedSTD = stp_INIT;
+             }
+       break;
+       
+  case stp_FSHold:
+       if(Seq2FeedSTDMEM != Seq2FeedSTD)Seq2FeedSTDMEM = Seq2FeedSTD;
+       break;     
+ }
+}
+
+
+
+            
+            
+            
+            
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_WeighPan
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Weighing Pan Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_2WeighPan(void)
+{
+if(SeqModeManager == stp_OFF_MODE) Seq2WeighPan = stp_INIT;
+
+switch (Seq2WeighPan)
+       {
+       case stp_INIT:
+            if(Seq2WeighPanMEM != Seq2WeighPan)Seq2WeighPanMEM = Seq2WeighPan;
+            if(Seq2Master == stp_DISCHARGING)Seq2WeighPan = stp_OPENDOORS;
+            else break;
+            
+       case stp_OPENDOORS:
+            if(Seq2WeighPan!=Seq2WeighPanMEM)
+            {
+            Seq2WeighPanMEM = Seq2WeighPan;
+            if(WP.DischargeTime>0) {MessageDisplay(lsub(TX_MSGDISCHARGEONTIME),Step_Message,2);T_EnOn(T_DischargeTime2);}
+            if(!IO_Enable[O_DischDoor22])
+             {
+              Output_ON(O_DischDoor2);
+             }
+            else 
+             {
+              if(WP.DischDoorMode == DDSmall || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor2);
+              if(WP.DischDoorMode == DDMedium || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor22); 
+             }
+            
+            if(WP.FeedAlgoType == FeediQSim) 
+              {
+               iQSimDischarge(2);
+              }
+            
+            if(WeighmentInPan[Scale2] && WeighPerUnitDone) Output_ON(O_ExternalBagCounter);
+            KnockHammerFlag = ON;
+            WeighmentInPan[Scale2] = OFF;
+            if(!IO_Enable[I_DischDoorClose2] || !MC.DischOnDoorSensor)
+             if(WeighPerUnitDone)
+               Output_ON(O_Discharge);
+            if(WP.VibratoryDischDoors)Output_ON(O_VibrDischDoor2);
+            break;
+            }
+            if(IO_Enable[I_DischDoorClose2]&& MC.DischOnDoorSensor &&!Input_State(I_DischDoorClose2)&&!IO_State[O_Discharge])
+             if(WeighPerUnitDone)
+                Output_ON(O_Discharge);
+            if(T_Dn(T_DischargeTime2))
+             {
+              MessageDisplay(lsub(TX_MSGDISCHARGEONWEIGHT),Step_Message,2);
+             }
+            else
+             {
+              if(T_Acc(T_DischargeTime2) > (T_PRE[T_DischargeTime2] - Open2ndDoorLastPart))
+               {
+                 if(WP.DischDoorMode == DDSmall)
+                   Output_ON(O_DischDoor22);
+                 if(WP.DischDoorMode == DDMedium)
+                  Output_ON(O_DischDoor2);
+               }
+             }      
+            if((WP.DischargeTime==0 || T_Dn(T_DischargeTime2)) && (WP.DischargeWeight == WP.NominalWeight || NetWeight[Scale2]< WP.DischargeWeight))
+            {
+               T_EnOff(T_DischargeTime2);
+               if ((ZeroFreqCnt[Scale2] == 0 || (WP.FeedAlgoType != FeediQSim && (LowLevel[Scale2] || EmptyHopper)))&& !AutoZeroOff && WP.ZeroingOpen)
+                {
+                SetZeroStatus[Scale2]=-1;
+                Seq2Master = stp_ZERO; 
+                break;
+                }
+               else Seq2WeighPan = stp_CLOSEDOORS;
+            }
+            else break;
+            
+       case stp_CLOSEDOORS:
+            if(Seq2WeighPanMEM!=Seq2WeighPan)
+            {
+            if(WP.FeedAlgoType == FeediQSim) iQSimStopProgram (SCALE_CHANNEL2, SCALE_NUMBER2);
+            Seq2WeighPanMEM = Seq2WeighPan;
+            Output_OFF(O_DischDoor2);
+            Output_OFF(O_DischDoor22);
+            Output_OFF(O_Discharge);
+            if(WeighPerUnitDone && MC.CFGBagHolder==0) Discharged(2);
+            Output_OFF(O_ExternalBagCounter);
+            KnockHammerFlag = OFF;
+            if(WP.VibratoryDischDoors)Output_OFF(O_VibrDischDoor2);
+            break;
+            }
+            if(Seq2Master != stp_DISCHARGING && Seq2Master != stp_ZERO)Seq2WeighPan = stp_INIT;
+            
+       }
+
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_Spout
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Manual Spout Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_Spout(void)
+{
+int ScaleNo;
+if(SeqModeManager == stp_OFF_MODE) SeqSpout = stp_INIT;
+if(!Input_State(I_EmptyBagReady)&& IO_Enable[I_EmptyBagReady]) EmtpyBagReadyMem = OFF; 
+
+
+switch (SeqSpout)
+       {
+       case stp_INIT:
+            if(SeqSpout!=SeqSpoutMEM)
+                {
+                SeqSpoutMEM = SeqSpout;
+                Output_OFF(O_BagRelease);
+                }
+            if(MC.CFGBagHolder!=0 && (SeqModeManager==stp_AUTO_MODE||SeqModeManager==stp_STOPPING_MODE  
+               || (SeqModeManager==stp_MANUAL_MODE && ManualModeStep == stp_ManualSpout) ))
+            {
+             if((DischReq && !DischReqMem && !IO_Enable[I_EmptyBagReady]) || (Input_State(I_EmptyBagReady) && !EmtpyBagReadyMem && IO_Enable[I_EmptyBagReady])) 
+                  {
+                    if(!IO_Enable[I_EmptyBagReady]) 
+                     DischReqMem = ON;
+                    else
+                     EmtpyBagReadyMem = ON;
+
+                    Output_ON(O_BagHolder);
+                    Output_OFF(O_BagRelease);
+                    if(IO_Enable[I_EmptyBagReady]){SeqSpout = stp_DETECTBAG;break;}
+                    if(IO_Enable[O_InflateBag]){SeqSpout = stp_INFLATEBAG;break;}
+                    SeqSpout = stp_SPOUTOKTODISCH;break;
+                  }
+                else if(FaultState(FltS_BagNotDetected)&& StepMsg!=lsub(TX_MSGWAITDOWNSTREAM)) MessageDisplay(lsub(TX_MSGWAITDOWNSTREAM),Step_Message,1);
+                break;
+            }
+            break;    
+
+       case stp_DETECTBAG:
+              if(SeqSpout!=SeqSpoutMEM) 
+                  {
+                   SeqSpoutMEM = SeqSpout;
+                   if(SeqModeManager==stp_MANUAL_MODE) MessageDisplay(lsub(TX_MSGBAGDETECTION),Step_Message,1);
+                  }
+              if(!DischReq)
+                    {                         
+                    if(MP.BagDetectionTime>0&&!T_EN[T_BagDetectionTime]) T_EnOn(T_BagDetectionTime);
+                    if(T_Dn(T_BagDetectionTime) || MP.BagDetectionTime==0)
+                       { 
+                       FaultHandler(FltS_BagNotDetected,"");
+                       Output_OFF(O_BagHolder);
+                       Output_ON(O_BagRelease);
+                       T_EnOff(T_BagDetectionTime);
+                      SeqSpout = stp_INIT;break;
+                      }
+                    break;  
+                    }
+               else
+                    {
+                    if(T_EN[T_BagDetectionTime])T_EnOff(T_BagDetectionTime);
+                    if(FaultState(FltS_BagNotDetected)) FaultResetReq();
+                    DischReqMem=ON; 
+                    if(IO_Enable[O_InflateBag]){SeqSpout = stp_INFLATEBAG;break;}
+                    SeqSpout = stp_SPOUTOKTODISCH;break;
+                    }      
+               break;
+              
+       case stp_INFLATEBAG:
+                     if(SeqSpout!=SeqSpoutMEM) 
+                       {
+                       SeqSpoutMEM = SeqSpout;
+                       Output_ON(O_InflateBag);
+                       MessageDisplay(lsub(TX_MSGBAGINFLATE),Step_Message,1);
+                       }
+                     if(WP.BagInflationTime!=0 && !T_EN[T_BagInflationTime]) T_EnOn(T_BagInflationTime);
+                     if(WP.BagInflationTime==0 || T_Dn(T_BagInflationTime))
+                         {
+                         Output_OFF(O_InflateBag);
+                         T_EnOff(T_BagInflationTime);                                                 
+                         SeqSpout = stp_SPOUTOKTODISCH;
+                         }
+                     break;       
+
+       case stp_SPOUTOKTODISCH:
+            if(SeqSpoutMEM != SeqSpout)
+               {
+               SeqSpoutMEM = SeqSpout;
+               if(ManualModeStep == stp_ManualSpout) ManualModeStep = stp_ManualOkToDisch;
+               if(SeqModeManager==stp_MANUAL_MODE) MessageDisplay(concat(lsub(TX_MSGWAITMANUALDISCHARGE),space(1),TX_FSLASH,space(1),lsub(TX_MSGWAITINGFORSTART)),Step_Message,1);
+               }
+            
+            if(!DischReq && SeqWeighPan == stp_INIT && Seq2WeighPan == stp_INIT && (ManualModeStep == stp_INIT || ManualModeStep == stp_ManualOkToDisch))
+             {
+              if(!FaultState(FltS_BagNotDetected)) FaultHandler(FltS_BagNotDetected,"");
+              SeqSpout = stp_DONE;
+             } 
+            else  
+             {
+              if(FaultState(FltS_BagNotDetected)) FaultResetReq();
+             }
+            
+                 
+            if(SeqWeighPan == stp_CLOSEDOORS && WeighPerUnitDone) 
+             {
+               ScaleNo = 1;
+               SeqSpout = stp_FALLINGTIME;
+             } 
+            
+            if(Seq2WeighPan == stp_CLOSEDOORS && WeighPerUnitDone) 
+             {
+               ScaleNo = 2;
+               SeqSpout = stp_FALLINGTIME;
+             }
+             
+            if(ManualModeStep == stp_DONE) SeqSpout = stp_INIT;   
+            
+            break;
+       
+       case stp_FALLINGTIME:
+            if(SeqSpout!=SeqSpoutMEM) 
+               {
+               SeqSpoutMEM = SeqSpout;
+               MessageDisplay(lsub(TX_MSGFALLINGTIME),Step_Message,ScaleNo);
+               if(WeighPerUnitDone && MC.CFGBagHolder!=0) Discharged(ScaleNo);
+               }
+            if(WP.FallingTime != 0 && !T_EN[T_FallingTime]) {T_EnOn(T_FallingTime);break;}
+            if(WP.FallingTime == 0 || T_Dn(T_FallingTime))
+            {
+            T_EnOff(T_FallingTime);
+            if(MessageOutStp[ScaleNo-1]== lsub(TX_MSGFALLINGTIME)) MessageDisplay(lsub(TX_MSGBLANK),Step_Message,ScaleNo);
+            SeqSpout = stp_DONE;
+            }
+            else break;     
+       
+       case stp_DONE:
+            if(SeqSpoutMEM != SeqSpout)
+             {
+              SeqSpoutMEM = SeqSpout;
+              if(WP.FeedAlgoType == FeediQSim) T_EnOn(T_BagRelease);
+             }
+              
+            Output_OFF(O_BagHolder);
+            Output_ON(O_BagRelease);
+            
+            if(!T_EN[T_BagRelease] || T_Dn(T_BagRelease))
+            {        
+             if(!DischReq && !DischReqMem)
+             {
+              if(T_EN[T_BagRelease]) T_EnOff(T_BagRelease);
+              SeqSpout = stp_INIT;
+             } 
+            }  
+
+            break;
+       }
+
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_ManDischarge
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Weighing Pan Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_ManDischarge(void)
+{
+
+if(SeqModeManager == stp_OFF_MODE) SeqManDischarge = stp_INIT;
+
+switch (SeqManDischarge)
+       {
+       case stp_INIT:
+            if(SeqManDischargeMEM != SeqManDischarge)
+             {
+              SeqManDischargeMEM = SeqManDischarge;
+              T_EnOff(T_DischargeTime);
+             } 
+            if(SeqModeManager == stp_MANUAL_MODE && ManualModeStep == stp_ManualDisch1)
+               SeqManDischarge = stp_OPENDOORS;
+            else break;
+            
+     
+       case stp_OPENDOORS:
+            if(SeqManDischargeMEM!=SeqManDischarge)
+            {
+            SeqManDischargeMEM = SeqManDischarge;
+            
+            MessageDisplay(lsub(TX_MSGMANUALDISCHARGE),Step_Message,1);
+            T_EnOn(T_DischargeTime);
+            
+            if(!IO_Enable[O_DischDoor12])
+             {
+              Output_ON(O_DischDoor1);
+             }
+            else 
+             {
+              if(WP.DischDoorMode == DDSmall || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor1);
+              if(WP.DischDoorMode == DDMedium || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor12); 
+             }
+           
+            if(WP.FeedAlgoType == FeediQSim) 
+              {
+               iQSimDischarge(1);
+              }
+            Output_ON(O_DischReady);
+            if(WeighmentInPan[Scale1] && WeighPerUnitDone) Output_ON(O_ExternalBagCounter);
+            KnockHammerFlag = ON;
+            WeighmentInPan[Scale1] = OFF;
+            if(!IO_Enable[I_DischDoorClose1] || !MC.DischOnDoorSensor)
+              Output_ON(O_Discharge);
+            if(WP.VibratoryDischDoors)Output_ON(O_VibrDischDoor1);
+            break;
+            }
+            
+            if(T_EN[T_DischargeTime] && T_Acc(T_DischargeTime) > (T_PRE[T_DischargeTime] - Open2ndDoorLastPart))
+               {
+                 if(WP.DischDoorMode == DDSmall)
+                   Output_ON(O_DischDoor12);
+                 if(WP.DischDoorMode == DDMedium)
+                  Output_ON(O_DischDoor1);
+               }
+               
+            if(IO_Enable[I_DischDoorClose1]&& MC.DischOnDoorSensor &&!Input_State(I_DischDoorClose1)&&!IO_State[O_Discharge])
+              Output_ON(O_Discharge);
+            if(StopHMI || (IO_Enable[I_Stop] && Input_State(I_Stop)&&!I_StopMem) 
+               ||(DischargeHMI1 ||(IO_Enable[I_ManDisch1]&& Input_State(I_ManDisch1)&&!I_ManDischMem1)))
+                       SeqManDischarge = stp_CLOSEDOORS;
+            else break;
+            
+       case stp_CLOSEDOORS:
+            if(SeqManDischargeMEM != SeqManDischarge)
+              {
+               T_EnOn(T_BagRelease);
+               SeqManDischargeMEM = SeqManDischarge;
+               StopHMI=OFF;
+               DischargeHMI1=OFF;
+               I_ManDischMem1=ON;
+               I_StopMem=ON;
+               OutOfTol[Scale1] = OFF;
+               Output_OFF(O_DischDoor1);
+               Output_OFF(O_DischDoor12);
+               Output_OFF(O_Discharge);
+               if(WeighPerUnitDone && MC.CFGBagHolder==0) Discharged(1);
+               Output_OFF(O_DischReady);
+               Output_OFF(O_BagHolder);
+               Output_ON(O_BagRelease);
+               Output_OFF(O_ExternalBagCounter);
+               KnockHammerFlag = OFF;
+               if(WP.VibratoryDischDoors)Output_OFF(O_VibrDischDoor1);
+               break;
+               }
+            if (T_Dn(T_BagRelease))
+              {
+               Output_OFF(O_BagRelease);
+               T_EnOff(T_BagRelease);
+               SeqManDischarge = stp_DONE;
+              } 
+
+            else break;
+        
+       case stp_DONE:
+            if(SeqManDischargeMEM != SeqManDischarge)
+              {
+              SeqManDischargeMEM = SeqManDischarge;
+              ManualModeStep = stp_DONE;
+              }    
+            if(SeqModeManager == stp_OFF_MODE)SeqManDischarge = stp_INIT;
+       }
+       
+if(DischargeHMI1) DischargeHMI1=OFF;
+if(IO_Enable[I_Start] && Input_State(I_Start)) I_StartMem = ON;
+if(IO_Enable[I_Stop] && Input_State(I_Stop)) I_StopMem = ON;
+if(IO_Enable[I_ManDisch1]&& Input_State(I_ManDisch1))I_ManDischMem1 = ON;
+
+
+}
+
+/*------------------------------------------------------------------------------- 
+--  Procedure Name    : SEQ_2ManDischarge
+--  Created by        : Steve Santerre
+--  Last modified on  : 2015/08
+--  
+--  Purpose           : Weighing Pan Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------------*/
+void SEQ_2ManDischarge(void)
+{
+
+if(SeqModeManager == stp_OFF_MODE) Seq2ManDischarge = stp_INIT;
+
+switch (Seq2ManDischarge)
+       {
+       case stp_INIT:
+           if(Seq2ManDischargeMEM != Seq2ManDischarge)
+             {
+              Seq2ManDischargeMEM = Seq2ManDischarge;
+              T_EnOff(T_DischargeTime2);
+             } 
+            if(SeqModeManager == stp_MANUAL_MODE && ManualModeStep == stp_ManualDisch2)
+               Seq2ManDischarge = stp_OPENDOORS;
+            else break;
+            
+     
+       case stp_OPENDOORS:
+            if(Seq2ManDischargeMEM!=Seq2ManDischarge)
+            {
+            Seq2ManDischargeMEM = Seq2ManDischarge;
+            
+            MessageDisplay(lsub(TX_MSGMANUALDISCHARGE),Step_Message,2);
+            MessageDisplay(TX_MSGBLANK,Step_Message,1);
+            T_EnOn(T_DischargeTime2);
+            
+            if(!IO_Enable[O_DischDoor22])
+             {
+              Output_ON(O_DischDoor2);
+             }
+            else 
+             {
+              if(WP.DischDoorMode == DDSmall || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor2);
+              if(WP.DischDoorMode == DDMedium || WP.DischDoorMode == DDLarge)
+               Output_ON(O_DischDoor22); 
+             }
+            if(WP.FeedAlgoType == FeediQSim) 
+              {
+               iQSimDischarge(2);
+              }
+            Output_ON(O_DischReady);
+            if(WeighmentInPan[Scale2] && WeighPerUnitDone) Output_ON(O_ExternalBagCounter);
+            KnockHammerFlag = ON;
+            WeighmentInPan[Scale2] = OFF;
+            if(!IO_Enable[I_DischDoorClose2] || !MC.DischOnDoorSensor)
+              Output_ON(O_Discharge);
+            if(WP.VibratoryDischDoors)Output_ON(O_VibrDischDoor2);
+            break;
+            }
+            if(T_EN[T_DischargeTime] && T_Acc(T_DischargeTime) > (T_PRE[T_DischargeTime] - Open2ndDoorLastPart))
+               {
+                 if(WP.DischDoorMode == DDSmall)
+                   Output_ON(O_DischDoor22);
+                 if(WP.DischDoorMode == DDMedium)
+                  Output_ON(O_DischDoor2);
+               }
+               
+            if(IO_Enable[I_DischDoorClose2]&& MC.DischOnDoorSensor &&!Input_State(I_DischDoorClose2)&&!IO_State[O_Discharge])
+              Output_ON(O_Discharge);
+            if(StopHMI || (IO_Enable[I_Stop] && Input_State(I_Stop)&&!I_StopMem) 
+               ||(DischargeHMI2 ||(IO_Enable[I_ManDisch2]&& Input_State(I_ManDisch2)&&!I_ManDischMem2)))
+                       Seq2ManDischarge = stp_CLOSEDOORS;
+            else break;
+            
+       case stp_CLOSEDOORS:
+            if(Seq2ManDischargeMEM != Seq2ManDischarge)
+              {
+               T_EnOn(T_BagRelease);
+               Seq2ManDischargeMEM = Seq2ManDischarge;
+               StopHMI=OFF;
+               DischargeHMI2=OFF;
+               I_ManDischMem2=ON;
+               I_StopMem=ON;
+               OutOfTol[Scale2] = OFF;
+               Output_OFF(O_DischDoor2);
+               Output_OFF(O_DischDoor22);
+               Output_OFF(O_Discharge);
+               if(WeighPerUnitDone && MC.CFGBagHolder==0) Discharged(2);
+               Output_OFF(O_DischReady);
+               Output_OFF(O_BagHolder);
+               Output_ON(O_BagRelease);
+               Output_OFF(O_ExternalBagCounter);
+               KnockHammerFlag = OFF;
+               if(WP.VibratoryDischDoors)Output_OFF(O_VibrDischDoor2);
+               break;
+               }
+            if (T_Dn(T_BagRelease))
+              {
+               Output_OFF(O_BagRelease);
+               T_EnOff(T_BagRelease);
+               Seq2ManDischarge = stp_DONE;
+              } 
+
+            else break;
+        
+       case stp_DONE:
+            if(Seq2ManDischargeMEM != Seq2ManDischarge)
+              {
+              Seq2ManDischargeMEM = Seq2ManDischarge;
+              ManualModeStep = stp_DONE;
+              }    
+            if(SeqModeManager == stp_OFF_MODE)Seq2ManDischarge = stp_INIT;
+       }
+       
+if(DischargeHMI2) DischargeHMI2=OFF;
+if(IO_Enable[I_Start] && Input_State(I_Start)) I_StartMem = ON;
+if(IO_Enable[I_Stop] && Input_State(I_Stop)) I_StopMem = ON;
+if(IO_Enable[I_ManDisch2]&& Input_State(I_ManDisch2))I_ManDischMem2 = ON;
+
+
+}
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : Kicker
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Kicker Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void SEQ_Kicker(void)
+{
+//WP.KickerCenterTime
+//WP.KickerActivateTime
+
+if(SeqModeManager == stp_OFF_MODE) SeqKicker = stp_INIT;
+
+switch (SeqKicker)
+       {
+       case stp_INIT:
+            if(SeqKicker!=SeqKickerMEM)
+                {
+                SeqKickerMEM = SeqKicker;
+                KickerRetractedOffMem=OFF;
+                }
+            if(IO_Enable[O_KickerActivate] && (SeqModeManager==stp_AUTO_MODE||SeqModeManager==stp_STOPPING_MODE))
+            {
+                if(Input_State(I_BagAtKicker) && !BagAtKickerMem)
+                  {
+                    BagAtKickerMem=ON;
+                    SeqKicker = stp_CENTERBAG;
+                  }
+                else if(!Input_State(I_BagAtKicker) && BagAtKickerMem)
+                  {
+                    BagAtKickerMem=OFF;
+                    break;
+                  }
+                else break;    
+            }
+            break;
+               
+
+       case stp_CENTERBAG:
+          if(SeqKicker!=SeqKickerMEM)
+              {
+              SeqKickerMEM = SeqKicker;
+              }
+          if(!T_EN[T_KickerCenterTime] && T_PRE[T_KickerCenterTime] > 0 ) 
+           {
+            T_EnOn(T_KickerCenterTime);
+            break;
+           }
+          
+          if(T_Dn(T_KickerCenterTime) || T_PRE[T_KickerCenterTime] == 0  )
+          {
+          T_EnOff(T_KickerCenterTime);
+          SeqKicker = stp_KICKBAG;
+          }
+          else break;
+       
+       case stp_KICKBAG:
+          if(SeqKicker!=SeqKickerMEM)
+              {
+              SeqKickerMEM = SeqKicker;
+              Output_ON(O_KickerActivate);
+              }
+          if(!T_EN[T_KickerActivateTime] && T_PRE[T_KickerActivateTime] > 0 ) 
+           {
+            T_EnOn(T_KickerActivateTime);
+            break;
+           }
+          
+          
+        if(T_PRE[T_KickerActivateTime] > 0)
+          {  
+           if(T_Dn(T_KickerActivateTime))
+           {
+            Output_OFF(O_KickerActivate);
+            T_EnOff(T_KickerActivateTime);
+            SeqKicker = stp_INIT;
+           }
+          }
+        else
+         {
+          if(Input_State(I_KickerRetracted) && KickerRetractedOffMem)
+                  {
+                    Output_OFF(O_KickerActivate);
+                    SeqKicker = stp_INIT;
+                  }
+          if(!Input_State(I_KickerRetracted))
+                  {
+                    KickerRetractedOffMem=ON;
+                    break;
+                  }
+         }           
+        
+        break;         
+       
+       }
+       
+}   
+
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : KnockHammer
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/02
+--  
+--  Purpose           : Knock Hammer Sequence
+--                      
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--------------------------------------------------------------------------*/
+void KnockHammer(void)
+{
+  if(KnockHammerFlag)
+   if(WP.KnockningTime > 0 && IO_Enable[O_KnockHammer])
+             { 
+               if(!T_EN[T_KnockningTime] && !KnockHammerFlipped)
+                {
+                T_EnOn(T_KnockningTime);
+                KnockHammerFlipped = ON;
+                if(!KnockHammerOut)
+                 { 
+                 Output_ON(O_KnockHammer);
+                 KnockHammerOut = ON;
+                 }
+                else 
+                 {
+                 Output_OFF(O_KnockHammer);
+                 KnockHammerOut = OFF;
+                 }
+                }
+               if(T_Dn(T_KnockningTime)) 
+                 {
+                  T_EnOff(T_KnockningTime);
+                  KnockHammerFlipped = OFF;
+                 }   
+             }
+
+ if(!KnockHammerFlag &&( KnockHammerOut || T_EN[T_KnockningTime] || KnockHammerFlipped))
+             {
+              KnockHammerOut = OFF;
+              KnockHammerFlipped = OFF;
+              Output_OFF(O_KnockHammer);
+              T_EnOff(T_KnockningTime);
+             }
+}
+
+
+
+              
+ 

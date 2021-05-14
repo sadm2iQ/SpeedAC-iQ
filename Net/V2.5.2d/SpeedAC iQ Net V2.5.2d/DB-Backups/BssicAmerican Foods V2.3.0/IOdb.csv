@@ -1,0 +1,72 @@
+﻿1	Emergency stop	9	1	1
+2	Discharge request	0	1	1
+3	Discharge door close	0	0	1
+4	Catch gate open	12	1	1
+5	High level sensor	2	1	1
+6	Stop	0	0	1
+7	Empty hopper	0	0	1
+8	Pressure switch	8	1	1
+9	Motor failure	10	1	1
+10	Low level sensor	1	1	1
+11	Start	0	0	1
+12	Manual discharge	0	0	1
+13	Dribble feed only	0	0	1
+14	OK for bulk feed	0	0	1
+15	OK for interm. feed	0	0	1
+16	OK for dribble feed	0	0	1
+17	Empty bag ready	0	0	1
+18	Clear faults	0	0	1
+19	Bag detected at kicker	0	0	1
+20	Kicker retracted	0	0	1
+21	Batch end	0	0	1
+22	Reset out of tol. alarm	0	0	1
+23	-----	0	0	1
+24	-----	0	0	1
+25	Change WP IN1	0	0	1
+26	Change WP IN2	0	0	1
+27	Change WP IN3	0	0	1
+28	Change WP IN4	0	0	1
+29	Flex input #1	0	0	1
+30	Flex input #2	0	0	1
+31	Hold cycle	0	0	1
+32	-----	0	0	1
+33	-----	0	0	1
+34	-----	0	0	1
+35	-----	0	0	1
+36	-----	0	0	1
+37	Fault	10	1	0
+38	Catch gate	1	1	0
+39	Vibratory disch. door	14	1	0
+40	Intermediate feed	0	0	0
+41	Discharge	11	1	0
+42	Stream regulator	2	1	0
+43	Discharge door	13	1	0
+44	Bulk feed	3	1	0
+45	Dribble feed	0	0	0
+46	Hopper fill request	12	1	0
+47	Discharge ready	0	0	0
+48	Low level	0	0	0
+49	Out of tolerance	0	0	0
+50	Overweight alarm	0	0	0
+51	Underweight alarm	0	0	0
+52	Cycle in progress	0	0	0
+53	External bag counter	0	0	0
+54	Cycle in hold	0	0	0
+55	Catch gate interm.	0	0	0
+56	Bag holder	0	0	0
+57	Inflate bag	0	0	0
+58	Bag release	0	0	0
+59	Knock hammer	0	0	0
+60	Activate kicker	0	0	0
+61	Batch ended	0	0	0
+62	Extend actuator	0	0	0
+63	Retract actuator	0	0	0
+64	Flex output #1	0	0	0
+65	Flex output #2	0	0	0
+66	Flex output #3	0	0	0
+67	WP Number OUT1	0	0	0
+68	WP Number OUT2	0	0	0
+69	WP Number OUT3	0	0	0
+70	WP Number OUT4	0	0	0
+71	Closing conveyor	0	0	0
+72	Cleanout completed	0	0	0

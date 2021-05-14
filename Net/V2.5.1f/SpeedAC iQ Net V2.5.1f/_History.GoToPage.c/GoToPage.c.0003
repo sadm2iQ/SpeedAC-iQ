@@ -1,0 +1,280 @@
+﻿
+
+
+/* *********************************************************************** */
+/*                                                                         */
+/*   Creation of GoTo page                                                 */
+/*                                                                         */
+/* *********************************************************************** */
+void CreateGoToPage(void) 
+{
+  begindraw();
+   createpage(PAGE_GOTO);  
+   page_background (PAGE_GOTO, BackgroundColor);
+
+  
+    beginlayout(LAYOUT_TYPE_VBOX, 0); //VBOX #1
+        
+        /* ************************* */
+        /*   Header section          */
+        /* ************************* */
+        beginlayout(LAYOUT_TYPE_HBOX, 0); // Header
+          CreatePTLogoHeader();
+          CreateHeader        (GOTO_RECIPE_ID, WD_PAGE_HEADER, HT_PAGE_HEADER, "", align_hcenter, concat (space(1), lsub(WP.Name), space(1)), FT_MEDIUM_SIZE, widget_locked);
+          CreateModeFltDisplay();
+          setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "0,1,0,0"); //"left,top,right,bottom"
+        endlayout(); // Header
+
+        
+        /* ************************* */
+        /*   Other Pages section     */
+        /* ************************* */
+         beginlayout(LAYOUT_TYPE_HBOX, 0); // Title             
+            CreateHeader (AUTO_SPACE_1, WD_USERLEVEL, HT_USERLEVEL, "", align_hcenter, "", FT_STANDARD_SIZE, widget_unlocked );  
+            CreateHeader (GOTO_PAGE_HEADER, WD_HEADER, HT_HEADER, "", align_hcenter, concat (space(1), lsub(TX_GOTO_PAGE), space(1)), FT_STANDARD_SIZE, widget_locked );
+            CreateHeader (ACCESS_LEVEL, WD_USERLEVEL, HT_USERLEVEL, "", align_vcenter, concat (space(1), lsub(TX_ACCESS_USER), space(1) , CurrentUser), FT_SMALL_SIZE, widget_unlocked);
+         endlayout(); //Title
+         
+         beginlayout(LAYOUT_TYPE_HBOX, 0);//Buttons
+           CreateNavigButtons (10, GOTO_PAGE_BUTTON_1, OFF);
+           DrawGenericButtons (SCREEN_GOTO, ON, 10, GOTO_PAGE_BUTTON_1, BTN_IO_CONFIG, BTN_FAULTS, BTN_INFO, BTN_IO_STATUS, BTN_MC, 
+                                                                 BTN_MP, BTN_ACCESS, BTN_NIL_WHITE, BTN_FLEXIO, BTN_COPY);
+         endlayout();  //Buttons                                                        
+                                                    
+
+        /* ***************************** */
+        /*   Other Functions section     */
+        /* ***************************** */
+         beginlayout(LAYOUT_TYPE_HBOX,0);//Title 
+          CreateHeader(GOTO_FNCT_HEADER, WD_HEADER, HT_HEADER, "", align_hcenter, concat (space(1), lsub(TX_GOTO_FNCT), space(1)), 25, widget_locked );
+         endlayout(); //Title 
+       
+         beginlayout(LAYOUT_TYPE_HBOX, 0); //Buttons
+          CreateNavigButtons (10, GOTO_FCT_BUTTON_1, OFF);
+          DrawGenericButtons (SCREEN_GOTO, ON, 10, GOTO_FCT_BUTTON_1, BTN_NIL_WHITE, BTN_RELWGT, BTN_NIL_WHITE, BTN_AUTOTUNEDONE, 
+                                                                    BTN_NIL_WHITE, BTN_LANGUAGE, BTN_NIL_WHITE, BTN_LOWLEVEL_AUTORESET, BTN_NIL_WHITE, BTN_LOAD_DBS );                                                      
+         endlayout(); // Buttons 
+
+   
+         /* ***************************** */
+         /*   Navig Bar section           */
+         /* ***************************** */
+        createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);
+        CreateNavigButtons (10, NAV_FCT_BUTTON_1, OFF);
+        DrawNavButtons (SCREEN_GOTO, ON, BTN_AUTO, BTN_RECIPE, BTN_REPORT, BTN_NAVIG, BTN_ALARM, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE);  
+       
+     endlayout();  //End of VBOX #1
+  enddraw();
+
+}
+
+/* *********************************************************************** */
+/*                                                                         */
+/*       Refresh GoTo screen display                                       */
+/*                                                                         */
+/* *********************************************************************** */
+
+void RefreshGoToScreen(void)
+{
+ begindraw(); 
+  
+  RefreshCurrentUser();
+  widget_text   (GOTO_RECIPE_ID, concat(space(1),lsub(WP.Name), space(1)));
+
+ enddraw();           
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* *********************************************************************** */
+/*                                                                         */
+/*   Create Info page                                                     */
+/*                                                                         */
+/* *********************************************************************** */
+
+void CreateInfoPage(void) 
+{
+  begindraw();
+  createpage(PAGE_INFO);  
+  page_background (PAGE_INFO, BackgroundColor);
+  
+  beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #1
+
+    beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #2    
+   
+      beginlayout(LAYOUT_TYPE_VBOX, 0); // VBOX #3  
+
+       beginlayout(LAYOUT_TYPE_HBOX, 0); // Header
+          CreatePTLogoHeader();
+          CreateHeader (INFO_ID, WD_PAGE_HEADER, HT_PAGE_HEADER, "", align_hcenter, concat (space(1), lsub(TX_INFO_PAGE), space(1)), FT_MEDIUM_SIZE, widget_locked);
+
+          beginlayout(LAYOUT_TYPE_HBOX, 0);  //HBOX #5   
+            CreateModeFltDisplay();
+          endlayout();  // End layout of HBOX #5
+        setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "0,1,0,0"); //"left,top,right,bottom" 
+       endlayout(); // Header
+
+      beginlayout(LAYOUT_TYPE_HBOX,0); // Grid Layout #1
+        beginrow(); // First row with three columns
+              setlayoutoption (LAYOUT_OPTION_CONTENT_MARGINS, "1,0,1,0"); //"left,top,right,bottom"        
+              CreatePromptField (INFO_ROW1_ID,    CL_PT_BLUE, OFF,lsub(TX_MCCUSTOMERNAME), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, No_Margin, widget_locked );
+              CreateOutputDataField (INFO_ROW1_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+              CreatePromptField (INFO_ROW1B_ID,    CL_PT_BLUE, OFF,"", FT_STANDARD_SIZE, WD_INFO_DESCRIPTION4, HT_INFO_DESCRIPTION, Left_Margin, widget_locked );
+              CreatePromptField   (INFO_ROW9_ID,     CL_PT_BLUE, ON,lsub(TX_INFO_TECH_SUPPORT), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION3, HT_INFO_DESCRIPTION, No_Margin, widget_locked);
+            endrow();
+        endlayout();    
+      
+
+       // Layout of both columns
+        beginlayout(LAYOUT_TYPE_HBOX, 0); // HBOX #6
+       
+          //  Layout of first column on the left
+          beginlayout(LAYOUT_TYPE_GRID, 0); // Grid Layout #1
+            
+            beginrow(); // Second row with three columns
+              CreatePromptField (INFO_ROW2_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCCUSTOMERLOCATION), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW2_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();
+            
+            beginrow(); // Thirth row with three columns
+              CreatePromptField (INFO_ROW3_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MCPLANTLINENAME), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW3_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();   
+                     
+            beginrow(); // Fourth row with three columns
+              CreatePromptField (INFO_ROW4_ID,    CL_PT_BLUE, OFF,                        lsub(TX_DEVICE_MODE), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW4_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();
+
+            beginrow(); // Fifth row with three columns
+              CreatePromptField (INFO_ROW5_ID,    CL_PT_BLUE, OFF,                        lsub(TX_MAC_ADDRESS), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW5_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField   (INFO_ROW6_ID,     CL_PT_BLUE, OFF,                    lsub(TX_IP_ADDRESS), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked); 
+              CreateOutputDataField (INFO_ROW6_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();
+            
+            beginrow(); // Seventh row with three columns
+              CreatePromptField   (INFO_ROW7_ID,     CL_PT_BLUE, OFF,                    lsub(TX_MCSERIALNBR), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW7_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();
+            
+            beginrow(); // Eighth row with three columns
+              CreatePromptField   (INFO_ROW8_ID,     CL_PT_BLUE, OFF,                    lsub(TX_SCALE_TYPE_ID), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION, HT_INFO_DESCRIPTION, Left_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW8_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX, HT_INFO_BOX, widget_locked);
+            endrow();
+                   
+          endlayout();  //End of Grid Layout #1
+          
+        // Spacing between columns
+          CreatePromptField (INFO_SPACE_1,    CL_PT_BLUE, OFF,                       "", FT_STANDARD_SIZE, WD_INFO_SPACE, HT_INFO_DESCRIPTION, 0, widget_locked);
+
+        // Layout of second column on the right 
+           
+          beginlayout(LAYOUT_TYPE_GRID, 0); // Grid Layout #2 
+            
+            beginrow(); // Second row with three columns  
+              CreatePromptField (INFO_ROW10_ID,    CL_PT_BLUE, OFF,                     lsub(TX_INFO_TELEPHONE), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION2, HT_INFO_DESCRIPTION, No_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW10_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX2, HT_INFO_BOX, widget_locked);
+            endrow();    
+            
+            //beginrow(); // Third row with three columns 
+            //  CreatePromptField   (INFO_ROW11_ID,     CL_PT_BLUE, OFF,                   lsub(TX_INFO_FAX), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION2, HT_INFO_DESCRIPTION, No_Margin, widget_unlocked);
+            //  CreateOutputDataField (INFO_ROW11_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX2, HT_INFO_BOX, widget_locked);
+            //endrow();                              
+          
+            beginrow(); // Fourth row with three columns  
+              CreatePromptField (INFO_ROW12_ID,    CL_PT_BLUE, OFF,                        lsub(TX_INFO_EMAIL) , FT_STANDARD_SIZE, WD_INFO_DESCRIPTION2, HT_INFO_DESCRIPTION, No_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW12_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SMALL, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX2, HT_INFO_BOX, widget_locked);
+            endrow();            
+
+            beginrow(); // Fifth row with three columns 
+              CreatePromptField (INFO_ROW13_ID,    CL_PT_BLUE, ON,                       lsub(TX_INFO_PARTS) , FT_STANDARD_SIZE, WD_INFO_DESCRIPTION2, HT_INFO_DESCRIPTION, No_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW13_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX2, HT_INFO_BOX, widget_locked);
+            endrow();  
+
+            beginrow(); // Sixth row with three columns
+              CreatePromptField (INFO_ROW14_ID,    CL_PT_BLUE, OFF,                       lsub(TX_INFO_TELEPHONE) , FT_STANDARD_SIZE, WD_INFO_DESCRIPTION2, HT_INFO_DESCRIPTION, No_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW14_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SIZE, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX2, HT_INFO_BOX, widget_locked);
+            endrow(); 
+            
+            beginrow(); // Eighth row with three columns
+              CreatePromptField   (INFO_ROW16_ID,     CL_PT_BLUE, OFF,                    lsub(TX_INFO_EMAIL), FT_STANDARD_SIZE, WD_INFO_DESCRIPTION2, HT_INFO_DESCRIPTION, No_Margin, widget_unlocked);
+              CreateOutputDataField (INFO_ROW16_OUTPUT, FT_RTC_BOLD, FT_STANDARD_SMALL, WIDGET_TEXT_ALIGN_LEFT, WD_INFO_BOX2, HT_INFO_BOX, widget_locked);
+            endrow();
+                    
+          endlayout(); // End of Grid Layout #2
+          
+       
+        endlayout(); // End of HBOX #6  
+       
+       createwidget (ID_STRETCH, WIDGET_TYPE_STRETCH);  // Set max distance between entries and infoline
+        
+     endlayout(); // End of VBOX #3 
+
+   
+   endlayout();  // End layout of HBOX #2
+   
+
+
+   createwidget (0, WIDGET_TYPE_STRETCH);
+
+   CreateNavigButtons (10, NAV_FCT_BUTTON_1, OFF);
+   DrawNavButtons (SCREEN_INFO, ON, BTN_AUTO, BTN_RECIPE, BTN_REPORT, BTN_NAVIG, BTN_ALARM, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE, BTN_NIL_BLUE);
+
+//}
+   endlayout();  // End of VBOX #1
+enddraw();
+
+}
+
+
+/* *********************************************************************** */
+/*                                                                         */
+/*       Refresh Info screen display                                       */
+/*                                                                         */
+/* *********************************************************************** */
+
+void RefreshInfoScreen(void)
+{
+  begindraw();
+     // First Column                                                                   
+        // Customer Name       
+        widget_text (INFO_ROW1_OUTPUT, MC.CustomerName);
+        // Customer Location       
+        widget_text (INFO_ROW2_OUTPUT, MC.CustomerLocation);
+        // Plant Line Name      
+        widget_text (INFO_ROW3_OUTPUT, MC.PlantLineName);
+        // Systec indicator model  
+        widget_text (INFO_ROW4_OUTPUT, lsub(RTC_Platform));                                    
+        // SpeedAc IQ Soft version       
+        widget_text (INFO_ROW5_OUTPUT, RTC_MacAdress);                                
+        // RTC Soft version 
+        widget_text (INFO_ROW6_OUTPUT, IP_Address); 
+        // Serial number
+        widget_text (INFO_ROW7_OUTPUT, MC.SerialNbr);
+        // Scale type
+        widget_text (INFO_ROW8_OUTPUT, lsub(TX_SCALE_TYPE));  
+        // Support phone number
+        widget_text (INFO_ROW10_OUTPUT, MC.SupportPhoneNbr);
+        widget_text (INFO_ROW11_OUTPUT, MC.SupportFaxNbr);
+        widget_text (INFO_ROW12_OUTPUT, MC.SupportEmail);
+        widget_text (INFO_ROW14_OUTPUT, MC.PartsPhoneNbr);  
+        //SADM2
+        //widget_text (INFO_ROW15_OUTPUT, MC.PartsFaxNbr);
+        widget_text (INFO_ROW16_OUTPUT, MC.PartsEmail);
+                                              
+  enddraw();                                        
+}          

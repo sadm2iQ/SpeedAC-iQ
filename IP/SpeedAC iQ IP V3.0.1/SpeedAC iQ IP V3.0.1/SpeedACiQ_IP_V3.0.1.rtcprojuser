@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<data>
+	<Project>
+		<Files>
+      <File Filename="SpeedacIQ_Main.c" Col="1" Row="728" ListIndex="1" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="IO.c" Col="6" Row="1423" ListIndex="2" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Report.c" Col="1" Row="288" ListIndex="3" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="GoToPage.c" Col="6" Row="77" ListIndex="4" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="MachineParameters.c" Col="1" Row="932" ListIndex="6" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="FlexIOs.c" Col="59" Row="1312" ListIndex="7" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Global_Functions.h" Col="1" Row="1362" ListIndex="8" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Fault.c" Col="1" Row="156" ListIndex="9" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Images.h" Col="1" Row="51" ListIndex="10" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="PT_Databases.h" Col="1" Row="8" ListIndex="11" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Enum_List.h" Col="22" Row="1487" ListIndex="12" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="RTC_Constants_PTech.h" Col="1" Row="183" ListIndex="13" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="qtmonitor_PTech.h" Col="33" Row="99" ListIndex="14" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="AutoPage.c" Col="1" Row="585" ListIndex="15" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Access.c" Col="6" Row="64" ListIndex="16" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="MachineConfig.c" Col="72" Row="1019" ListIndex="5" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Recipe.c" Col="1" Row="1036" ListIndex="17" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="DisplayHandling.c" Col="1" Row="1396" ListIndex="18" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Language.h" Col="45" Row="80" ListIndex="19" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Back_Task.c" Col="1" Row="119" ListIndex="20" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="BT_Logic.c" Col="10" Row="1223" ListIndex="21" WasShown="true" WasActive="true" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="BT_Enum_List.h" Col="1" Row="167" ListIndex="22" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="BT_DBases.h" Col="1" Row="184" ListIndex="23" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="iQFeeding.h" Col="1" Row="75" ListIndex="24" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="iQSimulation.h" Col="1" Row="1" ListIndex="25" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="iQSimulation.ccf" Col="43" Row="55" ListIndex="26" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="iQSubFonctions.c" Col="6" Row="154" ListIndex="27" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="LogicOperationTask.c" Col="1" Row="93" ListIndex="28" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="Print_Routines.c" Col="77" Row="819" ListIndex="29" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="iQFeeding.obj" Col="1" Row="624" ListIndex="-1" WasShown="false" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="GetHardwareInfo.h" Col="20" Row="29" ListIndex="30" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="GetHardwareInfo.obj" Col="1" Row="1" ListIndex="-1" WasShown="false" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="PLC_Com.c" Col="1" Row="1336" ListIndex="31" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="iQHiddenFunctions.obj" Col="1" Row="68" ListIndex="-1" WasShown="false" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+      <File Filename="SpeedACiQ_IP_V3.0.1.h" Col="1" Row="1" ListIndex="32" WasShown="true" WasActive="false" WasOpen="false">
+        <Bookmarks/>
+      </File>
+    </Files>
+		<Watches>
+      <watch Varname="scanavg" ArrayIndexA="-1" ArrayIndexB="-1" FileNo="27" LineNo="226" Taskname=""/>
+      <watch Varname="ScanTime_msMaxMem" ArrayIndexA="-1" ArrayIndexB="-1" FileNo="27" LineNo="233" Taskname=""/>
+      <watch Varname="ScanTime_msMax" ArrayIndexA="-1" ArrayIndexB="-1" FileNo="27" LineNo="233" Taskname=""/>
+    </Watches>
+		<EvaluateExpressions>
+      <Text>0.001</Text>
+      <Text>Batch</Text>
+      <Text>Batch.Name</Text>
+      <Text>BatchEndDone</Text>
+      <Text>BatchNov</Text>
+      <Text>BatchNov.Details[1]</Text>
+      <Text>BatchNov.Name</Text>
+      <Text>BatchNov.Name[1]</Text>
+      <Text>BatchNov.StdDev[1]</Text>
+      <Text>BatchNov[1]</Text>
+      <Text>BatchNov[1].Name</Text>
+      <Text>BatchTest.Name[1]</Text>
+      <Text>BypassSMRestart</Text>
+      <Text>LoadDBsFlag</Text>
+      <Text>MCdb.CustomerLocation</Text>
+      <Text>MCdb.CustomerName</Text>
+      <Text>MCdb.No</Text>
+      <Text>MCdb.PartsEmail</Text>
+      <Text>MCdb.PartsFaxNbr</Text>
+      <Text>MCdb.PartsPhoneNbr</Text>
+      <Text>MCdb.SupportEmail</Text>
+      <Text>MCdb.SupportFaxNbr</Text>
+      <Text>MCdb.SupportPhoneNbr</Text>
+      <Text>PAGE_REGISTRATION</Text>
+      <Text>PartsPhoneNbr</Text>
+      <Text>PRAGMALanguage</Text>
+      <Text>PrintReqOnBatchEnded</Text>
+      <Text>ProdSiloNoWeight</Text>
+      <Text>ProdSiloNoWeight[1]</Text>
+      <Text>ProdSiloNoWeight[1] </Text>
+      <Text>ProdTotalUnitsCnt</Text>
+      <Text>ProdTotalUnitsCnt[0]</Text>
+      <Text>ProdTotalUnitsCnt[Scale1]</Text>
+      <Text>ProdTotalWeight</Text>
+      <Text>ProdTotalWeight[0]</Text>
+      <Text>ProdTotalWeight[0] </Text>
+      <Text>ProdTotalWeight[1] </Text>
+      <Text>ProdTotalWeightLT</Text>
+      <Text>ProdTotalWeightLT[0] </Text>
+      <Text>ProdTotalWeightLT[1] </Text>
+      <Text>RecipeMem</Text>
+      <Text>RegistrationKey</Text>
+      <Text>ResetRegistryKey</Text>
+      <Text>SelectAndWaitPage.PageLoadingTime</Text>
+      <Text>SetZeroStatus</Text>
+      <Text>SetZeroStatus[0]</Text>
+      <Text>StatusArray</Text>
+      <Text>SystemErrorCode</Text>
+      <Text>TimeArray</Text>
+      <Text>WP.TargetWeightIP</Text>
+    </EvaluateExpressions>
+	</Project>
+</data>

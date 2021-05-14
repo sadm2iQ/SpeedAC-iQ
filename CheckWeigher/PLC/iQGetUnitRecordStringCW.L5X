@@ -1,0 +1,1578 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<RSLogix5000Content SchemaRevision="1.0" SoftwareRevision="30.00" TargetType="Rung" TargetCount="1" ContainsContext="true" Owner="IT Department, Premier Tech Ltd" ExportDate="Fri Apr 03 15:53:28 2020" ExportOptions="References NoRawData L5KData DecoratedData Context RoutineLabels AliasExtras IOTags NoStringData ForceProtectedEncoding AllProjDocTrans">
+<Controller Use="Context" Name="CheckWeigherUnitRecordString">
+<DataTypes Use="Context">
+<DataType Name="iQ_SocketDTAcceptResponse" Family="NoFamily" Class="User">
+<Members>
+<Member Name="Instance" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="Addr" DataType="iQ_SocketDTSocketAddr" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write"/>
+</Members>
+</DataType>
+<DataType Name="iQ_SocketDTOpenConnection" Family="NoFamily" Class="User">
+<Members>
+<Member Name="Timeout" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="DestAddress" DataType="STRING" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write"/>
+</Members>
+</DataType>
+<DataType Name="iQ_SocketDTReadIn" Family="NoFamily" Class="User">
+<Members>
+<Member Name="Timeout" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="BufLen" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+</Members>
+</DataType>
+<DataType Name="iQ_SocketDTReadResponse" Family="NoFamily" Class="User">
+<Members>
+<Member Name="Addr" DataType="iQ_SocketDTSocketAddr" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="BufLen" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="Buf" DataType="SINT" Dimension="480" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+</Members>
+</DataType>
+<DataType Name="iQ_SocketDTSocketAddr" Family="NoFamily" Class="User">
+<Members>
+<Member Name="Family" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="Port" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+<Member Name="Addr" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write"/>
+</Members>
+</DataType>
+<DataType Name="iQ_UnitRecord_CW" Family="NoFamily" Class="User">
+<Members>
+<Member Name="SN" DataType="STRING" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Serial Number: 
+Up to 12 Alphanumeric characters]]>
+</Description>
+</Member>
+<Member Name="Decimals" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Number of decimals in all values (From iQ Calibration)]]>
+</Description>
+</Member>
+<Member Name="TargetWeight" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Numeric value depending of iQ Format]]>
+</Description>
+</Member>
+<Member Name="Unit" DataType="STRING" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA['lb' or 'kg']]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZiQ_UnitRec4" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="KG" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec4" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[1 if .Unit = kg]]>
+</Description>
+</Member>
+<Member Name="LB" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec4" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[1 if .Unit = lb]]>
+</Description>
+</Member>
+<Member Name="TareWeight" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Fix Weight of empty container(bag)]]>
+</Description>
+</Member>
+<Member Name="CheckedWeight" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Checked Net Weight of the unit(bag)]]>
+</Description>
+</Member>
+<Member Name="ToleranceStatus" DataType="STRING" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[String to identify Tolerance of checked unit]]>
+</Description>
+</Member>
+<Member Name="ZZZZZZZZZZiQ_UnitRec10" DataType="SINT" Dimension="0" Radix="Decimal" Hidden="true" ExternalAccess="Read/Write"/>
+<Member Name="TolUnderReject" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec10" BitNumber="0" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Underweight Reject Unit]]>
+</Description>
+</Member>
+<Member Name="TolUnderAccept" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec10" BitNumber="1" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Underweight Accept Unit]]>
+</Description>
+</Member>
+<Member Name="TolGood" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec10" BitNumber="2" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Accepted Unit]]>
+</Description>
+</Member>
+<Member Name="TolOverAccept" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec10" BitNumber="3" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Overweight Accept Unit]]>
+</Description>
+</Member>
+<Member Name="TolOverReject" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec10" BitNumber="4" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Overweight Reject
+ Unit]]>
+</Description>
+</Member>
+<Member Name="TolInvalid" DataType="BIT" Dimension="0" Radix="Decimal" Hidden="false" Target="ZZZZZZZZZZiQ_UnitRec10" BitNumber="5" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Invalid Weighment]]>
+</Description>
+</Member>
+<Member Name="TolSetpoint" DataType="REAL" Dimension="0" Radix="Float" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Tolerance SP corresponding to Tolerance - 0 for invalid & Nominal for Good]]>
+</Description>
+</Member>
+<Member Name="UnitCnt" DataType="DINT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Number of produced Units - if Batch is used, Batch count is sent]]>
+</Description>
+</Member>
+<Member Name="Time" DataType="STRING" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Time of Weighment]]>
+</Description>
+</Member>
+<Member Name="Hour" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Hour Of production for current Weighment]]>
+</Description>
+</Member>
+<Member Name="Minute" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Minute Of production for current Weighment]]>
+</Description>
+</Member>
+<Member Name="Second" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Seconds Of production for current Weighment]]>
+</Description>
+</Member>
+<Member Name="Date" DataType="STRING" Dimension="0" Radix="NullType" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Date of Weighment]]>
+</Description>
+</Member>
+<Member Name="Year" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Year Of production for current Weighment]]>
+</Description>
+</Member>
+<Member Name="Month" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Month Of production for current Weighment]]>
+</Description>
+</Member>
+<Member Name="Day" DataType="INT" Dimension="0" Radix="Decimal" Hidden="false" ExternalAccess="Read/Write">
+<Description>
+<![CDATA[Day Of production for current Weighment]]>
+</Description>
+</Member>
+</Members>
+</DataType>
+</DataTypes>
+<AddOnInstructionDefinitions Use="Context">
+<AddOnInstructionDefinition Name="iQGetUnitRecordString_CW" Revision="1.0" ExecutePrescan="false" ExecutePostscan="false" ExecuteEnableInFalse="false" CreatedDate="2018-08-27T14:45:32.908Z" CreatedBy="TECHNT\sans" EditedDate="2020-04-03T17:23:07.311Z" EditedBy="TECHNT\SANS" SoftwareRevision="v30.00">
+<Parameters>
+<Parameter Name="EnableIn" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="false" Visible="false" ExternalAccess="Read Only">
+<Description>
+<![CDATA[Enable Input - System Defined Parameter]]>
+</Description>
+</Parameter>
+<Parameter Name="EnableOut" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="false" Visible="false" ExternalAccess="Read Only">
+<Description>
+<![CDATA[Enable Output - System Defined Parameter]]>
+</Description>
+</Parameter>
+<Parameter Name="EnableiQConnection" TagType="Base" DataType="BOOL" Usage="Input" Radix="Decimal" Required="true" Visible="true" ExternalAccess="Read/Write">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</Parameter>
+<Parameter Name="iQIPaddress" TagType="Base" DataType="STRING" Usage="InOut" Required="true" Visible="true" Constant="false"/>
+<Parameter Name="ConnectionError" TagType="Base" DataType="BOOL" Usage="Output" Radix="Decimal" Required="true" Visible="true" ExternalAccess="Read Only">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</Parameter>
+<Parameter Name="iQStringData" TagType="Base" DataType="iQ_UnitRecord_CW" Usage="InOut" Required="true" Visible="true" Constant="false"/>
+<Parameter Name="iQUnitRecordString" TagType="Base" DataType="STRING" Usage="InOut" Required="true" Visible="true" Constant="false"/>
+<Parameter Name="iQ_MSGSocketDelete" TagType="Base" DataType="MESSAGE" Usage="InOut" Required="true" Visible="true"/>
+<Parameter Name="iQ_MSGSocketCreate" TagType="Base" DataType="MESSAGE" Usage="InOut" Required="true" Visible="true"/>
+<Parameter Name="iQ_MSGSocketOpenConn" TagType="Base" DataType="MESSAGE" Usage="InOut" Required="true" Visible="true"/>
+<Parameter Name="iQ_MSGSocketRead" TagType="Base" DataType="MESSAGE" Usage="InOut" Required="true" Visible="true"/>
+<Parameter Name="SocketInstance" TagType="Base" DataType="DINT" Usage="InOut" Radix="Decimal" Required="true" Visible="true" Constant="false"/>
+<Parameter Name="ReadResponse" TagType="Base" DataType="iQ_SocketDTReadResponse" Usage="InOut" Required="true" Visible="true" Constant="false"/>
+</Parameters>
+<LocalTags>
+<LocalTag Name="iQ_CreateSocketReq" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_DeleteSocketReqONS" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_CreateSocketDestination" DataType="DINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_CreateSocketReqONS" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_Index" DataType="DINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_CreateSocketSource" DataType="iQ_SocketDTAcceptResponse" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[0,[0,0,0]]]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="iQ_SocketDTAcceptResponse">
+<DataValueMember Name="Instance" DataType="DINT" Radix="Decimal" Value="0"/>
+<StructureMember Name="Addr" DataType="iQ_SocketDTSocketAddr">
+<DataValueMember Name="Family" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Port" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Addr" DataType="DINT" Radix="Decimal" Value="0"/>
+</StructureMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_OpenSocketReqONS" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ReadSocketReq" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_SocketOpen" DataType="iQ_SocketDTOpenConnection" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[0,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="iQ_SocketDTOpenConnection">
+<DataValueMember Name="Timeout" DataType="DINT" Radix="Decimal" Value="0"/>
+<StructureMember Name="DestAddress" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ReadSocketReqONS" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_SocketReadIn" DataType="iQ_SocketDTReadIn" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[0,0]]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="iQ_SocketDTReadIn">
+<DataValueMember Name="Timeout" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="BufLen" DataType="DINT" Radix="Decimal" Value="0"/>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ReadBufferLenght" DataType="DINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ZERO_SINT" DataType="SINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="SINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_DecodeReceivedString" DataType="BOOL" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ReadStringTempo" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_SemiColumn" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[1,';$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="1"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[';']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_Dot" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[1,'.$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="1"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['.']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_Slash" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[1,'/$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="1"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['/']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_2Points" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[1,':$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="1"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[':']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_SCpos" DataType="DINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_MidQty" DataType="DINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_UnitRec" DataType="iQ_UnitRecord_CW" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],0,0.00000000e+000,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],0,0.00000000e+000,0.00000000e+000,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],0,0.00000000e+000,0,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],0,0,0,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],0,0,0]]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="iQ_UnitRecord_CW">
+<StructureMember Name="SN" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="Decimals" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="TargetWeight" DataType="REAL" Radix="Float" Value="0.0"/>
+<StructureMember Name="Unit" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="KG" DataType="BOOL" Value="0"/>
+<DataValueMember Name="LB" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TareWeight" DataType="REAL" Radix="Float" Value="0.0"/>
+<DataValueMember Name="CheckedWeight" DataType="REAL" Radix="Float" Value="0.0"/>
+<StructureMember Name="ToleranceStatus" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="TolUnderReject" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolUnderAccept" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolGood" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolOverAccept" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolOverReject" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolInvalid" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolSetpoint" DataType="REAL" Radix="Float" Value="0.0"/>
+<DataValueMember Name="UnitCnt" DataType="DINT" Radix="Decimal" Value="0"/>
+<StructureMember Name="Time" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="Hour" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Minute" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Second" DataType="INT" Radix="Decimal" Value="0"/>
+<StructureMember Name="Date" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="Year" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Month" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Day" DataType="INT" Radix="Decimal" Value="0"/>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ReadStringSub" DataType="STRING" Dimensions="12" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Array DataType="STRING" Dimensions="12">
+<Element Index="[0]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[1]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[2]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[3]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[4]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[5]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[6]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[7]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[8]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[9]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[10]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+<Element Index="[11]">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</Element>
+</Array>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_kg" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_lb" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'lb$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['lb']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_ReadStringTempo2" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_StartPos" DataType="DINT" Radix="Decimal" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[0]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_Port" DataType="STRING" ExternalAccess="None">
+<Description>
+<![CDATA[?port=2500]]>
+</Description>
+<DefaultData Format="L5K">
+<![CDATA[[10,'?port=2500$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="10"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['?port=2500']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="ConnectionTimeoutRetry" DataType="TIMER" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[0,30000,0]]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="TIMER">
+<DataValueMember Name="PRE" DataType="DINT" Radix="Decimal" Value="30000"/>
+<DataValueMember Name="ACC" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="EN" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TT" DataType="BOOL" Value="0"/>
+<DataValueMember Name="DN" DataType="BOOL" Value="0"/>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_TolI" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_TolOR" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_TolOA" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_TolG" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_TolUA" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+<LocalTag Name="iQ_TolUR" DataType="STRING" ExternalAccess="None">
+<DefaultData Format="L5K">
+<![CDATA[[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00']]]>
+</DefaultData>
+<DefaultData Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</Structure>
+</DefaultData>
+</LocalTag>
+</LocalTags>
+<Routines>
+<Routine Name="Logic" Type="RLL">
+<RLLContent>
+<Labels/>
+<Rung Number="0" Type="N">
+<Text>
+<![CDATA[XIO(S:FS)XIC(EnableiQConnection)XIO(ConnectionTimeoutRetry.DN)OTE(iQ_CreateSocketReq);]]>
+</Text>
+</Rung>
+<Rung Number="1" Type="N">
+<Text>
+<![CDATA[XIC(iQ_CreateSocketReq)XIC(ConnectionError)TON(ConnectionTimeoutRetry,?,?);]]>
+</Text>
+</Rung>
+<Rung Number="2" Type="N">
+<Text>
+<![CDATA[XIO(iQ_CreateSocketReq)XIC(iQ_MSGSocketCreate.DN)ONS(iQ_DeleteSocketReqONS)MOV(iQ_CreateSocketDestination,iQ_MSGSocketDelete.Instance)MSG(iQ_MSGSocketDelete);]]>
+</Text>
+</Rung>
+<Rung Number="3" Type="N">
+<Text>
+<![CDATA[XIC(iQ_CreateSocketReq)ONS(iQ_CreateSocketReqONS)MOV(1,iQ_CreateSocketSource.Instance)MOV(2,iQ_CreateSocketSource.Addr.Family)MOV(0,iQ_CreateSocketSource.Addr.Port)MOV(0,iQ_CreateSocketSource.Addr.Addr)MSG(iQ_MSGSocketCreate);]]>
+</Text>
+</Rung>
+<Rung Number="4" Type="N">
+<Text>
+<![CDATA[XIC(iQ_CreateSocketReq)XIC(iQ_MSGSocketCreate.DN)ONS(iQ_OpenSocketReqONS)MOV(SocketInstance,iQ_CreateSocketDestination)MOV(iQ_CreateSocketDestination,iQ_MSGSocketOpenConn.Instance)MOV(25000,iQ_SocketOpen.Timeout)[[MOV(63,iQ_Port.DATA[0]) MOV(112,iQ_Port.DATA[1]) MOV(111,iQ_Port.DATA[2]) ,MOV(114,iQ_Port.DATA[3]) MOV(116,iQ_Port.DATA[4]) MOV(61,iQ_Port.DATA[5]) ,MOV(50,iQ_Port.DATA[6]) MOV(53,iQ_Port.DATA[7]) MOV(48,iQ_Port.DATA[8]) ,MOV(48,iQ_Port.DATA[8]) MOV(10,iQ_ReadBufferLenght) ] ,CONCAT(iQIPaddress,iQ_Port,iQ_SocketOpen.DestAddress) ADD(iQ_SocketOpen.DestAddress.LEN,8,iQ_MSGSocketOpenConn.REQ_LEN) ,MSG(iQ_MSGSocketOpenConn) ];]]>
+</Text>
+</Rung>
+<Rung Number="5" Type="N">
+<Text>
+<![CDATA[XIC(iQ_ReadSocketReq)ONS(iQ_ReadSocketReqONS)MOV(iQ_MSGSocketOpenConn.Instance,iQ_MSGSocketRead.Instance)MOV(300000,iQ_SocketReadIn.Timeout)MOV(200,iQ_SocketReadIn.BufLen)MSG(iQ_MSGSocketRead);]]>
+</Text>
+</Rung>
+<Rung Number="6" Type="N">
+<Text>
+<![CDATA[XIC(iQ_CreateSocketReq)XIC(iQ_MSGSocketCreate.DN)XIC(iQ_MSGSocketOpenConn.DN)XIO(iQ_ReadSocketReq)OTL(iQ_ReadSocketReq);]]>
+</Text>
+</Rung>
+<Rung Number="7" Type="N">
+<Text>
+<![CDATA[XIO(iQ_CreateSocketReq)OTU(iQ_ReadSocketReq);]]>
+</Text>
+</Rung>
+<Rung Number="8" Type="N">
+<Text>
+<![CDATA[XIC(iQ_MSGSocketRead.DN)GRT(ReadResponse.BufLen,0)[MOV(ReadResponse.BufLen,iQ_ReadBufferLenght) ,COP(iQ_ZERO_SINT,iQUnitRecordString.DATA[0],iQUnitRecordString.LEN) ,MOV(ReadResponse.BufLen,iQUnitRecordString.LEN) ,COP(ReadResponse.Buf[0],iQUnitRecordString.DATA[0],ReadResponse.BufLen) ,CLR(ReadResponse.BufLen) ,OTU(iQ_ReadSocketReq) ,OTL(iQ_DecodeReceivedString) ];]]>
+</Text>
+</Rung>
+<Rung Number="9" Type="N">
+<Text>
+<![CDATA[XIC(iQ_DecodeReceivedString)[[DELETE(iQUnitRecordString,2,1,iQ_ReadStringTempo) ,MOV(59,iQ_SemiColumn.DATA[0]) ,MOV(1,iQ_SemiColumn.LEN) ,MOV(46,iQ_Dot.DATA[0]) ,MOV(1,iQ_Dot.LEN) ,MOV(47,iQ_Slash.DATA[0]) ,MOV(1,iQ_Slash.LEN) ,MOV(58,iQ_2Points.DATA[0]) ,MOV(1,iQ_2Points.LEN) ] ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[0]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) COP(iQ_ReadStringSub[0],iQ_UnitRec.SN,1) ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[1]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) STOR(iQ_ReadStringSub[1],iQ_UnitRec.TargetWeight) ,FIND(iQ_ReadStringSub[1],iQ_Dot,1,iQ_SCpos) SUB(iQ_ReadStringSub[1].LEN,iQ_SCpos,iQ_UnitRec.Decimals) ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[2]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) [COP(iQ_ReadStringSub[2],iQ_UnitRec.Unit,1) ,MOV(107,iQ_kg.DATA[0]) MOV(103,iQ_kg.DATA[1]) MOV(2,iQ_kg.LEN) ,MOV(108,iQ_lb.DATA[0]) MOV(98,iQ_lb.DATA[1]) MOV(2,iQ_lb.LEN) ,EQU(iQ_UnitRec.Unit,iQ_kg) [OTL(iQ_UnitRec.KG) ,OTU(iQ_UnitRec.LB) ] ,EQU(iQ_UnitRec.Unit,iQ_lb) [OTL(iQ_UnitRec.LB) ,OTU(iQ_UnitRec.KG) ] ] ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[3]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) STOR(iQ_ReadStringSub[3],iQ_UnitRec.TareWeight) ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[4]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) STOR(iQ_ReadStringSub[4],iQ_UnitRec.CheckedWeight) ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[5]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) [COP(iQ_ReadStringSub[5],iQ_UnitRec.ToleranceStatus,1) ,MOV(45,iQ_TolUR.DATA[0]) MOV(82,iQ_TolUR.DATA[1]) MOV(2,iQ_TolUR.LEN) ,MOV(45,iQ_TolUA.DATA[0]) MOV(65,iQ_TolUA.DATA[1]) MOV(2,iQ_TolUA.LEN) ,MOV(61,iQ_TolG.DATA[0]) MOV(61,iQ_TolG.DATA[1]) MOV(2,iQ_TolG.LEN) ,MOV(43,iQ_TolOA.DATA[0]) MOV(65,iQ_TolOA.DATA[1]) MOV(2,iQ_TolOA.LEN) ,MOV(43,iQ_TolOR.DATA[0]) MOV(82,iQ_TolOR.DATA[1]) MOV(2,iQ_TolOR.LEN) ,MOV(33,iQ_TolI.DATA[0]) MOV(33,iQ_TolI.DATA[1]) MOV(2,iQ_TolI.LEN) ,[OTU(iQ_UnitRec.TolUnderReject) ,OTU(iQ_UnitRec.TolUnderAccept) ,OTU(iQ_UnitRec.TolGood) ,OTU(iQ_UnitRec.TolOverAccept) ,OTU(iQ_UnitRec.TolOverReject) ,OTU(iQ_UnitRec.TolInvalid) ] ,EQU(iQ_UnitRec.ToleranceStatus,iQ_TolUR) OTL(iQ_UnitRec.TolUnderReject) ,EQU(iQ_UnitRec.ToleranceStatus,iQ_TolUA) OTL(iQ_UnitRec.TolUnderAccept) ,EQU(iQ_UnitRec.ToleranceStatus,iQ_TolG) OTL(iQ_UnitRec.TolGood) ,EQU(iQ_UnitRec.ToleranceStatus,iQ_TolOA) OTL(iQ_UnitRec.TolOverAccept) ,EQU(iQ_UnitRec.ToleranceStatus,iQ_TolOR) OTL(iQ_UnitRec.TolOverReject) ,EQU(iQ_UnitRec.ToleranceStatus,iQ_TolI) OTL(iQ_UnitRec.TolInvalid) ] ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[6]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) STOR(iQ_ReadStringSub[6],iQ_UnitRec.TolSetpoint) ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[7]) DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) STOD(iQ_ReadStringSub[7],iQ_UnitRec.UnitCnt) ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[8]) [DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) ,MID(iQ_ReadStringSub[8],2,1,iQ_ReadStringTempo2) [STOD(iQ_ReadStringTempo2,iQ_UnitRec.Hour) ,CONCAT(iQ_ReadStringTempo2,iQ_2Points,iQ_UnitRec.Time) ] ,MID(iQ_ReadStringSub[8],2,3,iQ_ReadStringTempo2) [STOD(iQ_ReadStringTempo2,iQ_UnitRec.Minute) ,CONCAT(iQ_UnitRec.Time,iQ_ReadStringTempo2,iQ_UnitRec.Time) CONCAT(iQ_UnitRec.Time,iQ_2Points,iQ_UnitRec.Time) ] ,MID(iQ_ReadStringSub[8],2,5,iQ_ReadStringTempo2) [STOD(iQ_ReadStringTempo2,iQ_UnitRec.Second) ,CONCAT(iQ_UnitRec.Time,iQ_ReadStringTempo2,iQ_UnitRec.Time) ] ] ,FIND(iQ_ReadStringTempo,iQ_SemiColumn,1,iQ_SCpos) SUB(iQ_SCpos,1,iQ_MidQty) MID(iQ_ReadStringTempo,iQ_MidQty,1,iQ_ReadStringSub[9]) [DELETE(iQ_ReadStringTempo,iQ_SCpos,1,iQ_ReadStringTempo) ,MID(iQ_ReadStringSub[9],4,1,iQ_ReadStringTempo2) [STOD(iQ_ReadStringTempo2,iQ_UnitRec.Year) ,CONCAT(iQ_ReadStringTempo2,iQ_Slash,iQ_UnitRec.Date) ] ,MID(iQ_ReadStringSub[9],2,5,iQ_ReadStringTempo2) [STOD(iQ_ReadStringTempo2,iQ_UnitRec.Month) ,CONCAT(iQ_UnitRec.Date,iQ_ReadStringTempo2,iQ_UnitRec.Date) CONCAT(iQ_UnitRec.Date,iQ_Slash,iQ_UnitRec.Date) ] ,MID(iQ_ReadStringSub[9],2,7,iQ_ReadStringTempo2) [STOD(iQ_ReadStringTempo2,iQ_UnitRec.Day) ,CONCAT(iQ_UnitRec.Date,iQ_ReadStringTempo2,iQ_UnitRec.Date) ] ] ,COP(iQ_UnitRec,iQStringData,1) OTU(iQ_DecodeReceivedString) ];]]>
+</Text>
+</Rung>
+<Rung Number="10" Type="N">
+<Text>
+<![CDATA[[XIC(iQ_MSGSocketCreate.ER) ,XIC(iQ_MSGSocketDelete.ER) ,XIC(iQ_MSGSocketOpenConn.ER) ,XIC(iQ_MSGSocketRead.ER) ]OTE(ConnectionError);]]>
+</Text>
+</Rung>
+</RLLContent>
+</Routine>
+</Routines>
+</AddOnInstructionDefinition>
+</AddOnInstructionDefinitions>
+<Tags Use="Context">
+<Tag Name="iQ1IPaddress" TagType="Base" DataType="STRING" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[13,'192.168.25.11$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="13"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['192.168.25.11']]>
+</DataValueMember>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQ_CreateSocketDestination" TagType="Base" DataType="DINT" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[32065]]>
+</Data>
+<Data Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="32065"/>
+</Data>
+</Tag>
+<Tag Name="iQ_CreateSocketSource" TagType="Base" DataType="iQ_SocketDTAcceptResponse" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[1,[2,0,0]]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="iQ_SocketDTAcceptResponse">
+<DataValueMember Name="Instance" DataType="DINT" Radix="Decimal" Value="1"/>
+<StructureMember Name="Addr" DataType="iQ_SocketDTSocketAddr">
+<DataValueMember Name="Family" DataType="INT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="Port" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Addr" DataType="DINT" Radix="Decimal" Value="0"/>
+</StructureMember>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQ_PortNbr" TagType="Base" DataType="STRING" Constant="true" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[10,'?port=2500$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="10"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['?port=2500']]>
+</DataValueMember>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQ_SocketOpen" TagType="Base" DataType="iQ_SocketDTOpenConnection" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[3000,[23,'192.168.25.20?port=2500$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="iQ_SocketDTOpenConnection">
+<DataValueMember Name="Timeout" DataType="DINT" Radix="Decimal" Value="3000"/>
+<StructureMember Name="DestAddress" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="23"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['192.168.25.20?port=2500']]>
+</DataValueMember>
+</StructureMember>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQ_SocketReadIn" TagType="Base" DataType="iQ_SocketDTReadIn" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[300000,200]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="iQ_SocketDTReadIn">
+<DataValueMember Name="Timeout" DataType="DINT" Radix="Decimal" Value="300000"/>
+<DataValueMember Name="BufLen" DataType="DINT" Radix="Decimal" Value="200"/>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQ_SocketReadResponse" TagType="Base" DataType="iQ_SocketDTReadResponse" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[[0,0,0],0,[60,59,45,45,45,45,45,45,45,59,50,53,46,48,48,59,107,103,59,50,53,46,48,48,59,62,111,60,59,50,52,46,57,48,59,61,59
+					,50,53,46,49,48,59,49,48,48,57,53,59,53,47,49,50,59,49,52,53,51,49,51,59,62,13,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+					,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+					,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+					,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+					,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+					,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="iQ_SocketDTReadResponse">
+<StructureMember Name="Addr" DataType="iQ_SocketDTSocketAddr">
+<DataValueMember Name="Family" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Port" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Addr" DataType="DINT" Radix="Decimal" Value="0"/>
+</StructureMember>
+<DataValueMember Name="BufLen" DataType="DINT" Radix="Decimal" Value="0"/>
+<ArrayMember Name="Buf" DataType="SINT" Dimensions="480" Radix="Decimal">
+<Element Index="[0]" Value="60"/>
+<Element Index="[1]" Value="59"/>
+<Element Index="[2]" Value="45"/>
+<Element Index="[3]" Value="45"/>
+<Element Index="[4]" Value="45"/>
+<Element Index="[5]" Value="45"/>
+<Element Index="[6]" Value="45"/>
+<Element Index="[7]" Value="45"/>
+<Element Index="[8]" Value="45"/>
+<Element Index="[9]" Value="59"/>
+<Element Index="[10]" Value="50"/>
+<Element Index="[11]" Value="53"/>
+<Element Index="[12]" Value="46"/>
+<Element Index="[13]" Value="48"/>
+<Element Index="[14]" Value="48"/>
+<Element Index="[15]" Value="59"/>
+<Element Index="[16]" Value="107"/>
+<Element Index="[17]" Value="103"/>
+<Element Index="[18]" Value="59"/>
+<Element Index="[19]" Value="50"/>
+<Element Index="[20]" Value="53"/>
+<Element Index="[21]" Value="46"/>
+<Element Index="[22]" Value="48"/>
+<Element Index="[23]" Value="48"/>
+<Element Index="[24]" Value="59"/>
+<Element Index="[25]" Value="62"/>
+<Element Index="[26]" Value="111"/>
+<Element Index="[27]" Value="60"/>
+<Element Index="[28]" Value="59"/>
+<Element Index="[29]" Value="50"/>
+<Element Index="[30]" Value="52"/>
+<Element Index="[31]" Value="46"/>
+<Element Index="[32]" Value="57"/>
+<Element Index="[33]" Value="48"/>
+<Element Index="[34]" Value="59"/>
+<Element Index="[35]" Value="61"/>
+<Element Index="[36]" Value="59"/>
+<Element Index="[37]" Value="50"/>
+<Element Index="[38]" Value="53"/>
+<Element Index="[39]" Value="46"/>
+<Element Index="[40]" Value="49"/>
+<Element Index="[41]" Value="48"/>
+<Element Index="[42]" Value="59"/>
+<Element Index="[43]" Value="49"/>
+<Element Index="[44]" Value="48"/>
+<Element Index="[45]" Value="48"/>
+<Element Index="[46]" Value="57"/>
+<Element Index="[47]" Value="53"/>
+<Element Index="[48]" Value="59"/>
+<Element Index="[49]" Value="53"/>
+<Element Index="[50]" Value="47"/>
+<Element Index="[51]" Value="49"/>
+<Element Index="[52]" Value="50"/>
+<Element Index="[53]" Value="59"/>
+<Element Index="[54]" Value="49"/>
+<Element Index="[55]" Value="52"/>
+<Element Index="[56]" Value="53"/>
+<Element Index="[57]" Value="51"/>
+<Element Index="[58]" Value="49"/>
+<Element Index="[59]" Value="51"/>
+<Element Index="[60]" Value="59"/>
+<Element Index="[61]" Value="62"/>
+<Element Index="[62]" Value="13"/>
+<Element Index="[63]" Value="10"/>
+<Element Index="[64]" Value="10"/>
+<Element Index="[65]" Value="0"/>
+<Element Index="[66]" Value="0"/>
+<Element Index="[67]" Value="0"/>
+<Element Index="[68]" Value="0"/>
+<Element Index="[69]" Value="0"/>
+<Element Index="[70]" Value="0"/>
+<Element Index="[71]" Value="0"/>
+<Element Index="[72]" Value="0"/>
+<Element Index="[73]" Value="0"/>
+<Element Index="[74]" Value="0"/>
+<Element Index="[75]" Value="0"/>
+<Element Index="[76]" Value="0"/>
+<Element Index="[77]" Value="0"/>
+<Element Index="[78]" Value="0"/>
+<Element Index="[79]" Value="0"/>
+<Element Index="[80]" Value="0"/>
+<Element Index="[81]" Value="0"/>
+<Element Index="[82]" Value="0"/>
+<Element Index="[83]" Value="0"/>
+<Element Index="[84]" Value="0"/>
+<Element Index="[85]" Value="0"/>
+<Element Index="[86]" Value="0"/>
+<Element Index="[87]" Value="0"/>
+<Element Index="[88]" Value="0"/>
+<Element Index="[89]" Value="0"/>
+<Element Index="[90]" Value="0"/>
+<Element Index="[91]" Value="0"/>
+<Element Index="[92]" Value="0"/>
+<Element Index="[93]" Value="0"/>
+<Element Index="[94]" Value="0"/>
+<Element Index="[95]" Value="0"/>
+<Element Index="[96]" Value="0"/>
+<Element Index="[97]" Value="0"/>
+<Element Index="[98]" Value="0"/>
+<Element Index="[99]" Value="0"/>
+<Element Index="[100]" Value="0"/>
+<Element Index="[101]" Value="0"/>
+<Element Index="[102]" Value="0"/>
+<Element Index="[103]" Value="0"/>
+<Element Index="[104]" Value="0"/>
+<Element Index="[105]" Value="0"/>
+<Element Index="[106]" Value="0"/>
+<Element Index="[107]" Value="0"/>
+<Element Index="[108]" Value="0"/>
+<Element Index="[109]" Value="0"/>
+<Element Index="[110]" Value="0"/>
+<Element Index="[111]" Value="0"/>
+<Element Index="[112]" Value="0"/>
+<Element Index="[113]" Value="0"/>
+<Element Index="[114]" Value="0"/>
+<Element Index="[115]" Value="0"/>
+<Element Index="[116]" Value="0"/>
+<Element Index="[117]" Value="0"/>
+<Element Index="[118]" Value="0"/>
+<Element Index="[119]" Value="0"/>
+<Element Index="[120]" Value="0"/>
+<Element Index="[121]" Value="0"/>
+<Element Index="[122]" Value="0"/>
+<Element Index="[123]" Value="0"/>
+<Element Index="[124]" Value="0"/>
+<Element Index="[125]" Value="0"/>
+<Element Index="[126]" Value="0"/>
+<Element Index="[127]" Value="0"/>
+<Element Index="[128]" Value="0"/>
+<Element Index="[129]" Value="0"/>
+<Element Index="[130]" Value="0"/>
+<Element Index="[131]" Value="0"/>
+<Element Index="[132]" Value="0"/>
+<Element Index="[133]" Value="0"/>
+<Element Index="[134]" Value="0"/>
+<Element Index="[135]" Value="0"/>
+<Element Index="[136]" Value="0"/>
+<Element Index="[137]" Value="0"/>
+<Element Index="[138]" Value="0"/>
+<Element Index="[139]" Value="0"/>
+<Element Index="[140]" Value="0"/>
+<Element Index="[141]" Value="0"/>
+<Element Index="[142]" Value="0"/>
+<Element Index="[143]" Value="0"/>
+<Element Index="[144]" Value="0"/>
+<Element Index="[145]" Value="0"/>
+<Element Index="[146]" Value="0"/>
+<Element Index="[147]" Value="0"/>
+<Element Index="[148]" Value="0"/>
+<Element Index="[149]" Value="0"/>
+<Element Index="[150]" Value="0"/>
+<Element Index="[151]" Value="0"/>
+<Element Index="[152]" Value="0"/>
+<Element Index="[153]" Value="0"/>
+<Element Index="[154]" Value="0"/>
+<Element Index="[155]" Value="0"/>
+<Element Index="[156]" Value="0"/>
+<Element Index="[157]" Value="0"/>
+<Element Index="[158]" Value="0"/>
+<Element Index="[159]" Value="0"/>
+<Element Index="[160]" Value="0"/>
+<Element Index="[161]" Value="0"/>
+<Element Index="[162]" Value="0"/>
+<Element Index="[163]" Value="0"/>
+<Element Index="[164]" Value="0"/>
+<Element Index="[165]" Value="0"/>
+<Element Index="[166]" Value="0"/>
+<Element Index="[167]" Value="0"/>
+<Element Index="[168]" Value="0"/>
+<Element Index="[169]" Value="0"/>
+<Element Index="[170]" Value="0"/>
+<Element Index="[171]" Value="0"/>
+<Element Index="[172]" Value="0"/>
+<Element Index="[173]" Value="0"/>
+<Element Index="[174]" Value="0"/>
+<Element Index="[175]" Value="0"/>
+<Element Index="[176]" Value="0"/>
+<Element Index="[177]" Value="0"/>
+<Element Index="[178]" Value="0"/>
+<Element Index="[179]" Value="0"/>
+<Element Index="[180]" Value="0"/>
+<Element Index="[181]" Value="0"/>
+<Element Index="[182]" Value="0"/>
+<Element Index="[183]" Value="0"/>
+<Element Index="[184]" Value="0"/>
+<Element Index="[185]" Value="0"/>
+<Element Index="[186]" Value="0"/>
+<Element Index="[187]" Value="0"/>
+<Element Index="[188]" Value="0"/>
+<Element Index="[189]" Value="0"/>
+<Element Index="[190]" Value="0"/>
+<Element Index="[191]" Value="0"/>
+<Element Index="[192]" Value="0"/>
+<Element Index="[193]" Value="0"/>
+<Element Index="[194]" Value="0"/>
+<Element Index="[195]" Value="0"/>
+<Element Index="[196]" Value="0"/>
+<Element Index="[197]" Value="0"/>
+<Element Index="[198]" Value="0"/>
+<Element Index="[199]" Value="0"/>
+<Element Index="[200]" Value="0"/>
+<Element Index="[201]" Value="0"/>
+<Element Index="[202]" Value="0"/>
+<Element Index="[203]" Value="0"/>
+<Element Index="[204]" Value="0"/>
+<Element Index="[205]" Value="0"/>
+<Element Index="[206]" Value="0"/>
+<Element Index="[207]" Value="0"/>
+<Element Index="[208]" Value="0"/>
+<Element Index="[209]" Value="0"/>
+<Element Index="[210]" Value="0"/>
+<Element Index="[211]" Value="0"/>
+<Element Index="[212]" Value="0"/>
+<Element Index="[213]" Value="0"/>
+<Element Index="[214]" Value="0"/>
+<Element Index="[215]" Value="0"/>
+<Element Index="[216]" Value="0"/>
+<Element Index="[217]" Value="0"/>
+<Element Index="[218]" Value="0"/>
+<Element Index="[219]" Value="0"/>
+<Element Index="[220]" Value="0"/>
+<Element Index="[221]" Value="0"/>
+<Element Index="[222]" Value="0"/>
+<Element Index="[223]" Value="0"/>
+<Element Index="[224]" Value="0"/>
+<Element Index="[225]" Value="0"/>
+<Element Index="[226]" Value="0"/>
+<Element Index="[227]" Value="0"/>
+<Element Index="[228]" Value="0"/>
+<Element Index="[229]" Value="0"/>
+<Element Index="[230]" Value="0"/>
+<Element Index="[231]" Value="0"/>
+<Element Index="[232]" Value="0"/>
+<Element Index="[233]" Value="0"/>
+<Element Index="[234]" Value="0"/>
+<Element Index="[235]" Value="0"/>
+<Element Index="[236]" Value="0"/>
+<Element Index="[237]" Value="0"/>
+<Element Index="[238]" Value="0"/>
+<Element Index="[239]" Value="0"/>
+<Element Index="[240]" Value="0"/>
+<Element Index="[241]" Value="0"/>
+<Element Index="[242]" Value="0"/>
+<Element Index="[243]" Value="0"/>
+<Element Index="[244]" Value="0"/>
+<Element Index="[245]" Value="0"/>
+<Element Index="[246]" Value="0"/>
+<Element Index="[247]" Value="0"/>
+<Element Index="[248]" Value="0"/>
+<Element Index="[249]" Value="0"/>
+<Element Index="[250]" Value="0"/>
+<Element Index="[251]" Value="0"/>
+<Element Index="[252]" Value="0"/>
+<Element Index="[253]" Value="0"/>
+<Element Index="[254]" Value="0"/>
+<Element Index="[255]" Value="0"/>
+<Element Index="[256]" Value="0"/>
+<Element Index="[257]" Value="0"/>
+<Element Index="[258]" Value="0"/>
+<Element Index="[259]" Value="0"/>
+<Element Index="[260]" Value="0"/>
+<Element Index="[261]" Value="0"/>
+<Element Index="[262]" Value="0"/>
+<Element Index="[263]" Value="0"/>
+<Element Index="[264]" Value="0"/>
+<Element Index="[265]" Value="0"/>
+<Element Index="[266]" Value="0"/>
+<Element Index="[267]" Value="0"/>
+<Element Index="[268]" Value="0"/>
+<Element Index="[269]" Value="0"/>
+<Element Index="[270]" Value="0"/>
+<Element Index="[271]" Value="0"/>
+<Element Index="[272]" Value="0"/>
+<Element Index="[273]" Value="0"/>
+<Element Index="[274]" Value="0"/>
+<Element Index="[275]" Value="0"/>
+<Element Index="[276]" Value="0"/>
+<Element Index="[277]" Value="0"/>
+<Element Index="[278]" Value="0"/>
+<Element Index="[279]" Value="0"/>
+<Element Index="[280]" Value="0"/>
+<Element Index="[281]" Value="0"/>
+<Element Index="[282]" Value="0"/>
+<Element Index="[283]" Value="0"/>
+<Element Index="[284]" Value="0"/>
+<Element Index="[285]" Value="0"/>
+<Element Index="[286]" Value="0"/>
+<Element Index="[287]" Value="0"/>
+<Element Index="[288]" Value="0"/>
+<Element Index="[289]" Value="0"/>
+<Element Index="[290]" Value="0"/>
+<Element Index="[291]" Value="0"/>
+<Element Index="[292]" Value="0"/>
+<Element Index="[293]" Value="0"/>
+<Element Index="[294]" Value="0"/>
+<Element Index="[295]" Value="0"/>
+<Element Index="[296]" Value="0"/>
+<Element Index="[297]" Value="0"/>
+<Element Index="[298]" Value="0"/>
+<Element Index="[299]" Value="0"/>
+<Element Index="[300]" Value="0"/>
+<Element Index="[301]" Value="0"/>
+<Element Index="[302]" Value="0"/>
+<Element Index="[303]" Value="0"/>
+<Element Index="[304]" Value="0"/>
+<Element Index="[305]" Value="0"/>
+<Element Index="[306]" Value="0"/>
+<Element Index="[307]" Value="0"/>
+<Element Index="[308]" Value="0"/>
+<Element Index="[309]" Value="0"/>
+<Element Index="[310]" Value="0"/>
+<Element Index="[311]" Value="0"/>
+<Element Index="[312]" Value="0"/>
+<Element Index="[313]" Value="0"/>
+<Element Index="[314]" Value="0"/>
+<Element Index="[315]" Value="0"/>
+<Element Index="[316]" Value="0"/>
+<Element Index="[317]" Value="0"/>
+<Element Index="[318]" Value="0"/>
+<Element Index="[319]" Value="0"/>
+<Element Index="[320]" Value="0"/>
+<Element Index="[321]" Value="0"/>
+<Element Index="[322]" Value="0"/>
+<Element Index="[323]" Value="0"/>
+<Element Index="[324]" Value="0"/>
+<Element Index="[325]" Value="0"/>
+<Element Index="[326]" Value="0"/>
+<Element Index="[327]" Value="0"/>
+<Element Index="[328]" Value="0"/>
+<Element Index="[329]" Value="0"/>
+<Element Index="[330]" Value="0"/>
+<Element Index="[331]" Value="0"/>
+<Element Index="[332]" Value="0"/>
+<Element Index="[333]" Value="0"/>
+<Element Index="[334]" Value="0"/>
+<Element Index="[335]" Value="0"/>
+<Element Index="[336]" Value="0"/>
+<Element Index="[337]" Value="0"/>
+<Element Index="[338]" Value="0"/>
+<Element Index="[339]" Value="0"/>
+<Element Index="[340]" Value="0"/>
+<Element Index="[341]" Value="0"/>
+<Element Index="[342]" Value="0"/>
+<Element Index="[343]" Value="0"/>
+<Element Index="[344]" Value="0"/>
+<Element Index="[345]" Value="0"/>
+<Element Index="[346]" Value="0"/>
+<Element Index="[347]" Value="0"/>
+<Element Index="[348]" Value="0"/>
+<Element Index="[349]" Value="0"/>
+<Element Index="[350]" Value="0"/>
+<Element Index="[351]" Value="0"/>
+<Element Index="[352]" Value="0"/>
+<Element Index="[353]" Value="0"/>
+<Element Index="[354]" Value="0"/>
+<Element Index="[355]" Value="0"/>
+<Element Index="[356]" Value="0"/>
+<Element Index="[357]" Value="0"/>
+<Element Index="[358]" Value="0"/>
+<Element Index="[359]" Value="0"/>
+<Element Index="[360]" Value="0"/>
+<Element Index="[361]" Value="0"/>
+<Element Index="[362]" Value="0"/>
+<Element Index="[363]" Value="0"/>
+<Element Index="[364]" Value="0"/>
+<Element Index="[365]" Value="0"/>
+<Element Index="[366]" Value="0"/>
+<Element Index="[367]" Value="0"/>
+<Element Index="[368]" Value="0"/>
+<Element Index="[369]" Value="0"/>
+<Element Index="[370]" Value="0"/>
+<Element Index="[371]" Value="0"/>
+<Element Index="[372]" Value="0"/>
+<Element Index="[373]" Value="0"/>
+<Element Index="[374]" Value="0"/>
+<Element Index="[375]" Value="0"/>
+<Element Index="[376]" Value="0"/>
+<Element Index="[377]" Value="0"/>
+<Element Index="[378]" Value="0"/>
+<Element Index="[379]" Value="0"/>
+<Element Index="[380]" Value="0"/>
+<Element Index="[381]" Value="0"/>
+<Element Index="[382]" Value="0"/>
+<Element Index="[383]" Value="0"/>
+<Element Index="[384]" Value="0"/>
+<Element Index="[385]" Value="0"/>
+<Element Index="[386]" Value="0"/>
+<Element Index="[387]" Value="0"/>
+<Element Index="[388]" Value="0"/>
+<Element Index="[389]" Value="0"/>
+<Element Index="[390]" Value="0"/>
+<Element Index="[391]" Value="0"/>
+<Element Index="[392]" Value="0"/>
+<Element Index="[393]" Value="0"/>
+<Element Index="[394]" Value="0"/>
+<Element Index="[395]" Value="0"/>
+<Element Index="[396]" Value="0"/>
+<Element Index="[397]" Value="0"/>
+<Element Index="[398]" Value="0"/>
+<Element Index="[399]" Value="0"/>
+<Element Index="[400]" Value="0"/>
+<Element Index="[401]" Value="0"/>
+<Element Index="[402]" Value="0"/>
+<Element Index="[403]" Value="0"/>
+<Element Index="[404]" Value="0"/>
+<Element Index="[405]" Value="0"/>
+<Element Index="[406]" Value="0"/>
+<Element Index="[407]" Value="0"/>
+<Element Index="[408]" Value="0"/>
+<Element Index="[409]" Value="0"/>
+<Element Index="[410]" Value="0"/>
+<Element Index="[411]" Value="0"/>
+<Element Index="[412]" Value="0"/>
+<Element Index="[413]" Value="0"/>
+<Element Index="[414]" Value="0"/>
+<Element Index="[415]" Value="0"/>
+<Element Index="[416]" Value="0"/>
+<Element Index="[417]" Value="0"/>
+<Element Index="[418]" Value="0"/>
+<Element Index="[419]" Value="0"/>
+<Element Index="[420]" Value="0"/>
+<Element Index="[421]" Value="0"/>
+<Element Index="[422]" Value="0"/>
+<Element Index="[423]" Value="0"/>
+<Element Index="[424]" Value="0"/>
+<Element Index="[425]" Value="0"/>
+<Element Index="[426]" Value="0"/>
+<Element Index="[427]" Value="0"/>
+<Element Index="[428]" Value="0"/>
+<Element Index="[429]" Value="0"/>
+<Element Index="[430]" Value="0"/>
+<Element Index="[431]" Value="0"/>
+<Element Index="[432]" Value="0"/>
+<Element Index="[433]" Value="0"/>
+<Element Index="[434]" Value="0"/>
+<Element Index="[435]" Value="0"/>
+<Element Index="[436]" Value="0"/>
+<Element Index="[437]" Value="0"/>
+<Element Index="[438]" Value="0"/>
+<Element Index="[439]" Value="0"/>
+<Element Index="[440]" Value="0"/>
+<Element Index="[441]" Value="0"/>
+<Element Index="[442]" Value="0"/>
+<Element Index="[443]" Value="0"/>
+<Element Index="[444]" Value="0"/>
+<Element Index="[445]" Value="0"/>
+<Element Index="[446]" Value="0"/>
+<Element Index="[447]" Value="0"/>
+<Element Index="[448]" Value="0"/>
+<Element Index="[449]" Value="0"/>
+<Element Index="[450]" Value="0"/>
+<Element Index="[451]" Value="0"/>
+<Element Index="[452]" Value="0"/>
+<Element Index="[453]" Value="0"/>
+<Element Index="[454]" Value="0"/>
+<Element Index="[455]" Value="0"/>
+<Element Index="[456]" Value="0"/>
+<Element Index="[457]" Value="0"/>
+<Element Index="[458]" Value="0"/>
+<Element Index="[459]" Value="0"/>
+<Element Index="[460]" Value="0"/>
+<Element Index="[461]" Value="0"/>
+<Element Index="[462]" Value="0"/>
+<Element Index="[463]" Value="0"/>
+<Element Index="[464]" Value="0"/>
+<Element Index="[465]" Value="0"/>
+<Element Index="[466]" Value="0"/>
+<Element Index="[467]" Value="0"/>
+<Element Index="[468]" Value="0"/>
+<Element Index="[469]" Value="0"/>
+<Element Index="[470]" Value="0"/>
+<Element Index="[471]" Value="0"/>
+<Element Index="[472]" Value="0"/>
+<Element Index="[473]" Value="0"/>
+<Element Index="[474]" Value="0"/>
+<Element Index="[475]" Value="0"/>
+<Element Index="[476]" Value="0"/>
+<Element Index="[477]" Value="0"/>
+<Element Index="[478]" Value="0"/>
+<Element Index="[479]" Value="0"/>
+</ArrayMember>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQConnectionError" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[0]]>
+</Data>
+<Data Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</Data>
+</Tag>
+<Tag Name="iQEnableGetString" TagType="Base" DataType="BOOL" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[0]]>
+</Data>
+<Data Format="Decorated">
+<DataValue DataType="BOOL" Radix="Decimal" Value="0"/>
+</Data>
+</Tag>
+<Tag Name="iQGetString1" TagType="Base" DataType="iQGetUnitRecordString_CW" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[35,32065,0,[1,[2,0,0]],[3000,[23,'192.168.25.20?port=2500$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]],[300000,200],64,0,[3,'>$r$l313;>$r$l3;>$r$l13;>$r$l13;>$r$l$r$l13;>$r$l;>$r$l13;>$r$l>$r$l13;>$r$l5313;>$r$l$l$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[1,';$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[1,'.$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[1,'/$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[1,':$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],7,6,[[7,'-------$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],0,2.50000000e+001,[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],1,2.50000000e+001,1.00000000e+000,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],2,0.00000000e+000,10095,[8,'14:53:13$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],14,53,13,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],0,0,0],[[7,'-------$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[5,'25.00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[5,'25.00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[3,'>o<$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[5,'24.90$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[1,'=$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[5,'25.10$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[5,'10095$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[4,'5/122$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[6,'145313$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'lb$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'13$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],3,[10,'?port=2500$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[61022,30000,0],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="iQGetUnitRecordString_CW">
+<DataValueMember Name="EnableIn" DataType="BOOL" Value="1"/>
+<DataValueMember Name="EnableOut" DataType="BOOL" Value="1"/>
+<DataValueMember Name="EnableiQConnection" DataType="BOOL" Value="0"/>
+<DataValueMember Name="ConnectionError" DataType="BOOL" Value="0"/>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQGetStringTest" TagType="Base" DataType="DINT" Radix="Decimal" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[0]]>
+</Data>
+<Data Format="Decorated">
+<DataValue DataType="DINT" Radix="Decimal" Value="0"/>
+</Data>
+</Tag>
+<Tag Name="iQMSG1" TagType="Base" DataType="MESSAGE" ExternalAccess="Read/Write">
+<Data Format="Message">
+<MessageParameters MessageType="CIP Generic" RequestedLength="0" ConnectedFlag="2" ConnectionPath="1, 0" CommTypeCode="0" ServiceCode="16#004f" ObjectType="16#0342" TargetObject="32065" AttributeNumber="16#0000" LocalIndex="0" LargePacketUsage="false"
+/>
+</Data>
+</Tag>
+<Tag Name="iQMSG2" TagType="Base" DataType="MESSAGE" ExternalAccess="Read/Write">
+<Data Format="Message">
+<MessageParameters MessageType="CIP Generic" RequestedLength="12" ConnectedFlag="2" ConnectionPath="1, 0" CommTypeCode="0" ServiceCode="16#004b" ObjectType="16#0342" TargetObject="0" AttributeNumber="16#0000" LocalIndex="0" LocalElement="iQ_CreateSocketSource"
+ DestinationTag="iQ_CreateSocketDestination" LargePacketUsage="false"/>
+</Data>
+</Tag>
+<Tag Name="iQMSG3" TagType="Base" DataType="MESSAGE" ExternalAccess="Read/Write">
+<Data Format="Message">
+<MessageParameters MessageType="CIP Generic" RequestedLength="33" ConnectedFlag="2" ConnectionPath="1, 0" CommTypeCode="0" ServiceCode="16#004c" ObjectType="16#0342" TargetObject="32065" AttributeNumber="16#0000" LocalIndex="0" LocalElement="iQ_SocketOpen"
+ LargePacketUsage="false"/>
+</Data>
+</Tag>
+<Tag Name="iQMSG4" TagType="Base" DataType="MESSAGE" ExternalAccess="Read/Write">
+<Data Format="Message">
+<MessageParameters MessageType="CIP Generic" RequestedLength="8" ConnectedFlag="2" ConnectionPath="1, 0" CommTypeCode="0" ServiceCode="16#004d" ObjectType="16#0342" TargetObject="32065" AttributeNumber="16#0000" LocalIndex="0" LocalElement="iQ_SocketReadIn"
+ DestinationTag="iQ_SocketReadResponse" LargePacketUsage="false"/>
+</Data>
+</Tag>
+<Tag Name="iQString" TagType="Base" DataType="STRING" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[64,'<;-------;25.00;kg;25.00;>o<;24.90;=;25.10;10095;5/12;145313;>$r$l2$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="64"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['<;-------;25.00;kg;25.00;>o<;24.90;=;25.10;10095;5/12;145313;>$r$l']]>
+</DataValueMember>
+</Structure>
+</Data>
+</Tag>
+<Tag Name="iQStringData" TagType="Base" DataType="iQ_UnitRecord_CW" Constant="false" ExternalAccess="Read/Write">
+<Data Format="L5K">
+<![CDATA[[[7,'-------$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],0,2.50000000e+001,[2,'kg$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],1,2.50000000e+001,1.00000000e+000,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],2,0.00000000e+000,10095,[8,'14:53:13$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],14,53,13,[0,'$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00$00'
+					],0,0,0]]]>
+</Data>
+<Data Format="Decorated">
+<Structure DataType="iQ_UnitRecord_CW">
+<StructureMember Name="SN" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="7"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['-------']]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="Decimals" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="TargetWeight" DataType="REAL" Radix="Float" Value="25.0"/>
+<StructureMember Name="Unit" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="2"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['kg']]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="KG" DataType="BOOL" Value="1"/>
+<DataValueMember Name="LB" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TareWeight" DataType="REAL" Radix="Float" Value="25.0"/>
+<DataValueMember Name="CheckedWeight" DataType="REAL" Radix="Float" Value="1.0"/>
+<StructureMember Name="ToleranceStatus" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="TolUnderReject" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolUnderAccept" DataType="BOOL" Value="1"/>
+<DataValueMember Name="TolGood" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolOverAccept" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolOverReject" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolInvalid" DataType="BOOL" Value="0"/>
+<DataValueMember Name="TolSetpoint" DataType="REAL" Radix="Float" Value="0.0"/>
+<DataValueMember Name="UnitCnt" DataType="DINT" Radix="Decimal" Value="10095"/>
+<StructureMember Name="Time" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="8"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA['14:53:13']]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="Hour" DataType="INT" Radix="Decimal" Value="14"/>
+<DataValueMember Name="Minute" DataType="INT" Radix="Decimal" Value="53"/>
+<DataValueMember Name="Second" DataType="INT" Radix="Decimal" Value="13"/>
+<StructureMember Name="Date" DataType="STRING">
+<DataValueMember Name="LEN" DataType="DINT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="DATA" DataType="STRING" Radix="ASCII">
+<![CDATA[]]>
+</DataValueMember>
+</StructureMember>
+<DataValueMember Name="Year" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Month" DataType="INT" Radix="Decimal" Value="0"/>
+<DataValueMember Name="Day" DataType="INT" Radix="Decimal" Value="0"/>
+</Structure>
+</Data>
+</Tag>
+</Tags>
+<Programs Use="Context">
+<Program Use="Context" Name="MainProgram">
+<Routines Use="Context">
+<Routine Use="Context" Name="MainRoutine">
+<RLLContent Use="Context">
+<Rung Use="Target" Number="0" Type="N">
+<Text>
+<![CDATA[[XIC(iQGetStringTest.0) [OTE(iQEnableGetString) ,CONCAT(iQ1IPaddress,iQ_PortNbr,iQ_SocketOpen.DestAddress) ] ,iQGetUnitRecordString_CW(iQGetString1,iQEnableGetString,iQ1IPaddress,iQConnectionError,iQStringData,iQString,iQMSG1,iQMSG2,iQMSG3,iQMSG4,iQ_CreateSocketDestination,iQ_SocketReadResponse) ];]]>
+</Text>
+</Rung>
+</RLLContent>
+</Routine>
+</Routines>
+</Program>
+</Programs>
+</Controller>
+</RSLogix5000Content>

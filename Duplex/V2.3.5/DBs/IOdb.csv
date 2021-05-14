@@ -1,0 +1,84 @@
+﻿1	Emergency stop	0	0	1
+2	Pressure switch	0	0	1
+3	Motor failure	0	0	1
+4	Low level sensor 1	1	1	1
+5	Discharge door close 1	0	0	1
+6	Catch gate open 1	0	0	1
+7	Discharge request	0	1	1
+8	Empty hopper	0	0	1
+9	High level sensor	0	0	1
+10	Low level sensor 2	2	1	1
+11	Discharge door close 2	0	0	1
+12	Catch gate open 2	0	0	1
+13	Start	0	0	1
+14	Stop	0	0	1
+15	Manual discharge 1	0	0	1
+16	Empty bag ready	0	0	1
+17	Clear faults	0	0	1
+18	Hold cycle	0	0	1
+19	Bag detected at kicker	0	0	1
+20	Kicker retracted	0	0	1
+21	Manual discharge 2	0	0	1
+22	Reset out of tol. alarm	0	0	1
+23	Batch end	0	0	1
+24	-----	0	0	1
+25	Change WP IN1	0	0	1
+26	Change WP IN2	0	0	1
+27	Change WP IN3	0	0	1
+28	Change WP IN4	0	0	1
+29	Flex input #1	0	0	1
+30	Flex input #2	0	0	1
+31	-----	0	0	1
+32	-----	0	0	1
+33	-----	0	0	1
+34	-----	0	0	1
+35	-----	0	0	1
+36	-----	0	0	1
+37	Bulk feed 1	0	1	0
+38	Dribble feed 1	1	1	0
+39	Catch gate 1	0	0	0
+40	Stream regulator 1	0	0	0
+41	Discharge door 1	8	1	0
+42	Vibratory disch. door 1	0	0	0
+43	Bulk feed 2	2	1	0
+44	Dribble feed 2	3	1	0
+45	Catch gate 2	0	0	0
+46	Stream regulator 2	0	0	0
+47	Discharge door 2	9	1	0
+48	Vibratory disch. door 2	0	0	0
+49	Discharge ready	0	0	0
+50	Hopper fill request	0	0	0
+51	Knock hammer	0	0	0
+52	Activate kicker	0	0	0
+53	Closing conveyor	0	0	0
+54	Cleanout completed 1	0	0	0
+55	Discharge	0	0	0
+56	Bag holder	0	0	0
+57	Inflate bag	0	0	0
+58	Bag release	0	0	0
+59	Batch ended	0	0	0
+60	Cleanout completed 2	0	0	0
+61	Fault	0	0	0
+62	Low level 1	0	0	0
+63	Out of tolerance 1	0	0	0
+64	Overweight alarm 1	0	0	0
+65	Underweight alarm 1	0	0	0
+66	External bag counter	0	0	0
+67	Cycle in progress	0	0	0
+68	Low level 2	0	0	0
+69	Out of tolerance 2	0	0	0
+70	Overweight alarm 2	0	0	0
+71	Underweight alarm 2	0	0	0
+72	Cycle in hold	0	0	0
+73	Extend actuator 1	0	0	0
+74	Retract actuator 1	0	0	0
+75	WP Number OUT1	0	0	0
+76	WP Number OUT2	0	0	0
+77	WP Number OUT3	0	0	0
+78	WP Number OUT4	0	0	0
+79	Extend actuator 2	0	0	0
+80	Retract actuator 2	0	0	0
+81	Flex output #1	0	0	0
+82	Flex output #2	0	0	0
+83	Flex output #3	0	0	0
+84	-----	0	0	0

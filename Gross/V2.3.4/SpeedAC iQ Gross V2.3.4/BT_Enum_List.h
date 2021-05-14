@@ -1,0 +1,332 @@
+﻿// From BT_Logic
+enum    //Timers
+{
+   T_FirstScan,
+   T_StabTimeLimit,
+   T_BulkBlankT,
+   T_IntermBlankT,
+   T_DribbleBlankT,
+   T_LowLevelDebounce,
+   T_TopUpONTime,
+   T_TopUpOFFTime,
+   T_OutOfTolTime,
+   T_DischargeTime,
+   T_BulkDuration, 
+   T_DribbleDuration,
+   T_CycleDuration,
+   T_AccessTimeout,
+   T_SlowCycleTime,
+   T_CatchGateMaxTime,
+   T_BagDetectionTime,
+   T_DischReqDebouncing,
+   T_RefillingTimeT,
+   T_EvacuationTime,
+   T_DelayedBagRelease,
+   T_BagRelease,
+   T_KnockingTime,
+   T_CatchGateDelay,
+   T_StreamRegHigh,
+   T_FlexOut1Off,
+   T_FlexOut1On,
+   T_FlexOut2Off, 
+   T_FlexOut2On,
+   T_FlexOut3OnTime,
+   T_FlexOut3InitOn,
+   T_FlexOut3OffTime,
+   T_iQFeedTimeout,
+   T_WPMDuration,
+   T_FaultDisplay,
+   T_ActuatorON,
+   T_ActuatorOFF,
+   T_KickerCenterTime,
+   T_KickerActivateTime,
+   T_EvacuationDelay,
+   T_LanceBlowOffTime,
+   T_HeartbeatON,
+   T_HeartbeatOFF,
+   T_LockingDeviceTime,
+   T_ProdDataReady,
+   T_FeedDelay,
+   T_PostFillingTime,
+   T_AspirationTime,
+   T_ExternalBagCounter,
+   T_VibrationPeriod,
+   T_DischReqiQSim,
+   T_AbnormalFeed,
+   T_InitAlgo,
+}
+
+// Fault Message enum
+enum
+{
+   //General Faults
+   FltG_EmergencyStop=0,
+   FltG_LowAirPressure,
+   FltG_CatchGateNotOpen,
+   FltG_SystemError,
+   FltG_DischDoorNotClosed,
+   FltG_ExceededCapacity,
+   FltG_MotorFailure,
+   FltG_BagLost,
+   
+   //Blocking Faults 
+   FltB_UnderWeight=32,
+   FltB_OverWeight,
+   FltB_DischargeTooLong,
+   FltB_ExceededCapacity,
+   
+   //Stopping Faults  
+   FltS_StabTooLong=64,
+   FltS_ZeroOutOfRange,
+   FltS_HopperIllogicalDetection,
+   FltS_EmptyBagTooHeavy,
+   FltS_BagNotDetected,
+   
+   //Warning Faults  
+   FltW_LowBattery=96,
+   FltW_SlowCycle,
+   FltW_BulkBlankTooLong,
+   FltW_DribbleBlankTooLong,
+   FltW_SystemWarning,
+   FltW_HopperLowLevel,
+   
+   Step_Message = 128
+}
+
+//enum for Inputs and Outputs in Relation to DBase IOdb.No
+enum
+{
+   I_EStop = 1,
+   I_DischReq,
+   I_OkToReleaseBag,
+   I_CatchGateOpen,
+   I_HighLevelSensor,
+   I_Stop,
+   I_HopperEmpty,
+   I_PressureSW,
+   I_MotorFailure,
+   I_LowLevelSensor,
+   I_Start,
+   I_ManDisch,
+   I_DribbleFeedOnly,
+   I_OK4BulkFeed,
+   I_OK4IntermFeed,
+   I_OK4DribbleFeed,
+   I_EmptyBagReady,
+   I_ClearFaults,
+   I_BagAtKicker,
+   I_KickerRetracted,
+   I_ReleaseAcknowledge,
+   I_ResetOutofTolAlarm,
+   I_LanceHighPosition,
+   I_HoldCycle,
+   I_ChangeWPIN1,
+   I_ChangeWPIN2,
+   I_ChangeWPIN3,
+   I_ChangeWPIN4,
+   I_FlexIO_1,
+   I_FlexIO_2,
+   I_BatchEnd,
+   I_Free2,
+   I_Free3,
+   I_Free4,
+   I_Free5,
+   I_Free6,// = 36,
+   O_Fault, // = 37,
+   O_CatchGate,
+   O_BagRequest,
+   O_IntermFeed,
+   O_Discharge,
+   O_StreamRegulator,
+   O_DischargeDoor,
+   O_BulkFeed,
+   O_DribbleFeed, // = 46,
+   O_HopFillReq,
+   O_BagRelease,
+   O_LowLevel,
+   O_OutOfTolerance,
+   O_OverWeightAlarm,
+   O_UnderWeightAlarm,
+   O_CycleInProgress,
+   O_ExternalBagCounter,
+   O_CycleInHold,
+   O_CatchGateInterm,
+   O_BagHolder,
+   O_InflateBag,
+   O_ReadyToReleaseBag,
+   O_KnockHammer,
+   O_KickerActivate,
+   O_ClosingCnv,
+   O_ExtendActuator,
+   O_RetractActuator,
+   O_FlexIO_1,
+   O_FlexIO_2,
+   O_FlexIO_3,
+   O_WPNumbOUT1,
+   O_WPNumbOUT2,
+   O_WPNumbOUT3,
+   O_WPNumbOUT4,
+   O_BatchEnded,
+   O_CleanoutCompleted,// =72
+   O_LowerEvacuationLance,
+   O_RaiseEvacuationLance,
+   O_LanceVacuum,
+   O_ControlledAspiration,
+   O_BlowAir,
+   O_LockingDevice,
+   O_Free1,
+   O_Free2,
+   O_Free3,
+   O_Free4,
+   O_Free5,
+   O_Free6, // =84
+   IO_Max_Array
+}
+
+enum  //Steps names for any sequence
+{
+   stp_INIT=1,
+   stp_ZERO,
+   stp_APPLYLOCKINGDEVICE,
+   stp_BAGREQUEST,
+   stp_WAITFORDISCHREQ, //5
+   stp_REMOVELOCKINGDEVICE,
+   stp_TARE,
+   stp_FEED,
+   stp_SAMPLE,
+   stp_BAGFILLED, //10
+   stp_TOPUP,
+   stp_OUTOFTOL,
+   stp_BAGRELEASEDELAY,
+   stp_LANCE,
+   stp_KNOCKHAMMER, //15
+   stp_READYTORELEASEBAG,
+   stp_RELEASEBAG,
+   stp_WAITFORRELEASEACKNOWLEDGE,
+   stp_ASPIRATION,
+   stp_OPENDOORS, //20
+   stp_CLOSEDOORS,
+   stp_DETECTBAG,
+   stp_INFLATEBAG,
+   stp_SPOUTOKTODISCH,
+   stp_FALLINGTIME, //25
+   stp_FEEDSTD,
+   stp_FEEDSMART,
+   stp_FEEDFLASH,
+   stp_FEEDPLOOP,
+   stp_FEEDDONE,   //30
+   stp_FSBulkBlank, 
+   stp_FSBulkSetPoint,
+   stp_FSInterBlank,
+   stp_FSInterSetPoint,
+   stp_FSDribbleBlank,  //35
+   stp_FSDribbleSetPoint, 
+   stp_FSDone,
+   stp_FSFeedDelay,
+   stp_FSPostFilling,
+   stp_FSHold,        //40
+   stp_DONE,         
+   stp_ManualDisch,
+   stp_ManualSpout,
+   stp_ManualOkToDisch,
+   stp_CENTERBAG,      //45
+   stp_KICKBAG,   
+   stp_LDON,
+   stp_LDOFF,
+   stp_LDAPPLYING,
+   stp_LDREMOVING,    //50      
+   stp_LANCEDOWN,  
+   stp_LANCEVACUUM,
+   stp_LANCEBLOWAIR,
+   stp_LANCERISING,
+   stp_LANCEHIGH,  //55
+}
+
+enum  //Algorithm Types
+{
+   FeedStd,
+   FeediQSmart,
+   FeediQFlash,
+   FeediQSim,
+   FeedPLoop
+}
+
+enum //Hopper State Images
+{
+   HopperFill,
+   HopperEmpty
+}
+
+enum //Start-Pause btn states
+{
+StartBtn,
+PauseBtn
+}
+
+enum //Auto Tune Button Images
+{
+   AutoTuneOFF,
+   AutoTuneON
+}
+
+enum //Check all weighs Images
+{
+ReleaseWeight,
+CheckAllWeight
+}
+
+enum //Discharge Images
+{
+   DischOff,
+   DischOn,
+   DischUnder,
+   DischOver,
+   DischMan,
+}
+
+enum //Feeder Type
+{
+   FeederNone=0,
+   FeederG=1,
+   FeederGHS,
+   FeederB,
+   FeederGV,
+   FeederV,
+   FeederBHS,
+   FeederBSF,
+   FeederBSFHS,
+   FeederSS,
+   FeederDS,
+   FeederLast
+}
+
+enum
+{
+   StreamRegLow,
+   StreamRegHigh,
+   StreamRegAutoRaiseAtEnd,
+   StreamRegAutoRaiseAtRun,
+}
+
+enum
+{
+   ByWeight,
+   ByTime
+}
+enum
+{
+   HOLD_CYCLE,
+   END_CYCLE,
+   DRIBBLE_CYCLE
+}
+
+enum
+{
+   NotUsed = 99999
+}
+
+enum
+{
+   local = 1,
+   remote
+}

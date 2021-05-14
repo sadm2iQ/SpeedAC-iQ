@@ -1,0 +1,462 @@
+﻿// From BT_Logic
+enum    //Timers
+{
+T_FirstScan,
+T_StabTimeLimit,
+T_BulkBlankT,
+T_IntermBlankT,
+T_DribbleBlankT,
+T_LowLevelDebounce,
+T_TopUpONTime,
+T_TopUpOFFTime,
+T_OutOfTolTime,
+T_DischargeTime,
+T_FeedDelayTime, //10
+T_BulkDuration, 
+T_DribbleDuration,
+T_CycleDuration,
+T_AccessTimeout,
+T_SlowCycleTime,
+T_DischDoorMaxTime,
+T_LowFeedingTime,
+T_BagDetectionTime,
+T_DischReqDebouncing,
+T_RefillingTimeT, //20
+T_BagInflationTime,
+T_FallingTime,
+T_BagRelease,
+T_KnockningTime,
+T_CatchGateDelay,
+T_StreamRegHigh,
+T_FlexOut1Off,
+T_FlexOut1On,
+T_FlexOut2Off, 
+T_FlexOut2On, //30
+T_FlexOut3OnTime,
+T_FlexOut3InitOn,
+T_FlexOut3OffTime,
+T_iQFeedTimeout,
+T_UPMDuration,
+T_FaultDisplay,
+T_ActuatorON,
+T_ActuatorOFF,
+T_PresetCycleTime,  
+T_HeartbeatON,  //40
+T_HeartbeatOFF,
+T_ProdDataReady,
+T_FlowThroughTime, 
+T_RegulatedTime, 
+T_CleanOutWeight,
+T_MaintenanceCycle,
+T_TickEvery1Sec,
+T_PulseTotalWeight,
+T_FeedGateMaxTime,
+T_InitAlgo,       //50
+}
+
+// Fault Message enum
+enum
+{
+//General Faults
+FltG_EmergencyStop=0,
+FltG_LowAirPressure,
+FltG_CatchGateNotOpen,
+FltG_SystemError,
+FltG_DischDoorNotClosed,
+FltG_ExceededCapacity,
+FltG_MotorFailure,
+
+//Blocking Faults 
+FltB_UnderWeight=32,
+FltB_OverWeight,
+FltB_DischargeTooLong,
+FltB_ExceededCapacity,
+FltB_FeedGateNotClose,
+
+//Stopping Faults  
+FltS_StabTooLong=64,
+FltS_ZeroOutOfRange,
+FltS_BagNotDetected,
+FltS_HopperIllogicalDetection,
+
+
+//Warning Faults  
+FltW_LowBattery=96,
+FltW_SlowCycle,
+FltW_BulkBlankTooLong,
+FltW_DribbleBlankTooLong,
+FltW_SystemWarning,
+FltW_HopperLowLevel,
+FltW_FeedRateLowLimit,
+FltW_FeedRateHighLimit,
+FltW_MaintenanceCycle,
+FltW_FeedRateMaxLimit,
+FltW_InvalidSiloSource,
+Step_Message = 128
+}
+
+//enum for Inputs and Outputs in Relation to DBase IOdb.No
+enum
+{
+I_EStop = 1,
+I_DischReq,
+I_DischDoorClose,
+I_FeedGateClose, 
+I_HighLevelSensor,
+I_Stop,
+I_HopperEmpty,
+I_PressureSW,
+I_MotorFailure,
+I_LowLevelSensor, //=10 
+I_Start,
+I_ManDisch,
+I_TotalReset,
+I_ClearFaults,
+I_HoldCycle,
+I_Free1,
+I_Free2,  
+I_Free3,
+I_BatchEnd, 
+I_ResetOutofTolAlarm,//20
+I_PresetFeedRate2,
+I_Free5, 
+I_Free6,
+I_Free7,
+I_ChangeWPIN1, //=25
+I_ChangeWPIN2,
+I_ChangeWPIN3,
+I_ChangeWPIN4,
+I_FlexIO_1,
+I_FlexIO_2,//30
+I_Free8,
+I_Free9,
+I_Free10,
+I_Free12,
+I_Free13,
+I_Free14,// = 36,
+O_Fault, // = 37,
+O_FeedRateLowAlarm, 
+O_FeedRateHighAlarm,
+O_VibrDischDoor,
+O_WatchDog,
+O_Discharge,
+O_DischDoor,//43
+O_BulkFeed,
+O_DribbleFeed,
+O_HopFillReq,
+O_DischReady,
+O_LowLevel,
+O_OutOfTolerance,//49
+O_OverWeightAlarm,
+O_UnderWeightAlarm,
+O_CycleInProgress,
+O_ExternalBagCounter,
+O_CycleInHold,
+O_Aspiration,//55
+O_CleanOutWeight,
+O_MaintenanceCycle,
+O_PulseTotalWeight,
+O_SlowCycle,
+O_BatchEnded,//=60
+O_FlexIO_1,
+O_FlexIO_2,
+O_FlexIO_3,
+O_Agitator,
+O_IntermFeed,
+O_CleanoutCompleted,
+O_WPNumbOUT1,
+O_WPNumbOUT2,
+O_WPNumbOUT3,
+O_WPNumbOUT4,
+O_Free3,//=71
+O_Free4,
+IO_Max_Array//73
+}
+
+enum      //Steps names for any sequence
+{
+stp_INIT=1,
+stp_ZERO,
+stp_FEED,
+stp_SAMPLE,
+stp_TOPUP,
+stp_OUTOFTOL,
+stp_RDYTODISCH,
+stp_DISCHARGING,
+stp_OPENDOORS,
+stp_CLOSEDOORS, //10
+stp_DETECTBAG,
+stp_INFLATEBAG,
+stp_SPOUTOKTODISCH,
+stp_FALLINGTIME,
+stp_FEEDSTD,
+stp_FEEDSMART,
+stp_FEEDFLASH,
+stp_FEEDDONE,
+stp_FSBulkBlank,
+stp_FSBulkSetPoint, //20
+stp_FSInterBlank,
+stp_FSInterSetPoint,
+stp_FSDribbleBlank,
+stp_FSDribbleSetPoint,
+stp_FSDone,
+stp_FSHold,
+stp_DONE,
+stp_ManualDisch,
+stp_ManualSpout,
+stp_ManualOkToDisch, //30
+stp_CENTERBAG,
+stp_KICKBAG,
+stp_REGULATETIME,
+stp_FLOWTHROUGH,
+stp_CheckFeedGateClose//35
+}
+
+enum   //Flow through sequences
+{
+stp_InitFlowThrough,
+stp_StartedFlowThrough,
+stp_PausedFlowThrough,
+stp_StoppedFlowThrough
+}
+
+enum   //Batch end by preset weight sequence 
+{
+stp_InitWeighment =1,//1
+stp_RegularWeighment,//2
+stp_LastTwoWeighment,//3
+stp_SpecialWeightment,//4
+stp_BatchEnded,//5
+}
+
+enum
+{
+stp_InitBatchPreset,
+stp_StartBatchPreset,
+stp_EndBatchPreset
+}
+
+
+//feed rate caluculation step
+enum
+{
+ stp_Init =1,
+ stp_CheckIdle,
+ stp_DoCalculateOnIdle,
+}
+
+enum  //Algorithm Types
+{
+FeedStd,
+FeediQSim,
+FeediQSmart,
+FeediQFlash
+}
+
+enum //Hopper State Images
+{
+HopperFill,
+HopperEmpty
+}
+
+enum //Start-Pause btn states
+{
+StartBtn,
+PauseBtn
+}
+
+enum //Auto Tune Button Images
+{
+AutoTuneOFF,
+AutoTuneON
+}
+
+enum //Check all weighs Images
+{
+ReleaseWeight,
+CheckAllWeight
+}
+
+enum //Discharge Images
+{
+DischPanOff,
+DischPanOn,
+DischMan,
+DischUnder,
+DischOver,
+}
+
+enum //Feeder Type
+{
+FeederNone=0,
+FeederG=1,
+FeederGHS,
+FeederB,
+FeederGV,
+FeederV,
+FeederBHS,
+FeederBSF,
+FeederBSFHS,
+FeederSS,
+FeederDS,
+FeederLast,
+}
+
+enum
+{
+StreamRegLow,
+StreamRegHigh,
+StreamRegAuto
+}
+
+enum
+{
+ByWeight,
+ByTime
+}
+enum
+{
+HOLD_CYCLE,
+END_CYCLE,
+DRIBBLE_CYCLE
+}
+
+enum
+{
+NotUsed = 99999
+}
+
+enum
+{
+local = 1,
+remote
+}
+
+enum  //Weighing modes
+{
+Monitoring,//0
+TimeControl,
+FeedRateControl,//2
+Batching,
+Bulk,
+FlowThrough,//5
+None
+}
+
+enum //Bulk mode
+{
+Ship,
+Receive
+}
+
+enum   //Pulse total weight check
+{
+stp_InitPTW,
+stp_StartPTW,
+stp_ContinueGenPTW,
+stp_StopPTW
+}
+
+
+
+enum
+{
+NO,
+YES
+}
+
+
+enum   // Silo No.
+{
+SiloDefault,
+Silo1,
+Silo2,
+Silo3,
+Silo4,
+Silo5,
+Silo6,
+Silo7,
+Silo8,
+Silo9,
+Silo10,
+Silo11,
+Silo12,
+Silo13,
+Silo14,
+Silo15,
+Silo16,
+Silo17,
+Silo18,
+Silo19,
+Silo20,
+Silo21,
+Silo22,
+Silo23,
+Silo24,
+Silo25,
+Silo26,
+Silo27,
+Silo28,
+Silo29,
+Silo30,
+Silo31,
+Silo32,
+Silo33,
+Silo34,
+Silo35,
+Silo36,
+Silo37,
+Silo38,
+Silo39,
+Silo40,
+Silo41,
+Silo42,
+Silo43,
+Silo44,
+Silo45,
+Silo46,
+Silo47,
+Silo48,
+Silo49,
+Silo50,
+SiloMax
+}
+
+enum
+{
+stp_InitCheckLowFeedRate,
+stp_LowFeedRateOccurred,
+stp_ResetLowFeedRate
+}
+
+enum
+{
+stp_InitCleanOutWeight,
+stp_CheckCleanOutWeight,
+stp_StartCleanOutWeight,
+stp_StopCleanOutWeight
+}
+
+enum
+{
+Unit = 1,
+Hourly,
+Shift,
+Daily
+}
+
+enum     //Report types
+{
+ReportTypeNone,
+Individual,
+FullEmpty
+}
+
+enum
+{
+stp_InitGates,
+stp_StartWithoutInvert,
+stp_StopWithoutInvert,
+stp_StartWithInvert,
+stp_StopWithInvert,
+}

@@ -1,0 +1,128 @@
+﻿/*------------------------------------------------------------------------- 
+--  Procedure Name    : iQRegistrationKeyCheck
+--  Created by        : Steve Santerre
+--  Last modified on  : 2016/06
+--  
+--  Purpose           : This function is called to Verify If Key correspond
+--                      To Mac Address
+--  Value Parameters  :
+--  Variable Params   : none
+--  Side Effects      : 
+--                      
+--------------------------------------------------------------------------*/
+ bool iQRegistrationKeyCheck(string EnteredKey,string MacAdress)
+ { 
+  bool result;
+  int i,j,len;
+  int CheckSum1,CheckSum2,CheckSum3;
+  string MacAdressField[6][2];
+  string MacAdressKey[12],CodedKey[12],CodeKeySorted[12],CodedKeyFinal[14];
+  CodedKey = "";
+  MacAdressKey = "";
+  CodeKeySorted = "";
+  CodedKeyFinal = "";
+  MacAdressField[0] = "";
+  MacAdressField[1] = "";
+  MacAdressField[2] = "";
+  MacAdressField[3] = "";
+  MacAdressField[4] = "";
+  MacAdressField[5] = "";
+  
+  
+  split(MacAdressField[0],MacAdress,':');
+  
+  MacAdressKey = lcase(concat(MacAdressField[0],MacAdressField[1],MacAdressField[2],MacAdressField[3],MacAdressField[4],MacAdressField[5]));
+  
+  len= length(MacAdressKey) - 1;
+  for (i=0;i<=len;i++)
+   {
+      if (MacAdressKey[i]>='a' && MacAdressKey[i]<='c')
+       {
+       CodedKey[len-i] = (MacAdressKey[i] - 32) + (2*i);
+       }
+      if (MacAdressKey[i]>='d' && MacAdressKey[i]<='f')
+       {
+       CodedKey[len-i] = (((MacAdressKey[i]-100)*3)+1)+int(i/4)+48;
+       } 
+      if (MacAdressKey[i]>='0' && MacAdressKey[i]<='9')
+       {
+       CodedKey[len-i] = MacAdressKey[i] + i + 50;
+       }
+   }
+   
+   CheckSum1 = int((CodedKey[0]+CodedKey[1]+CodedKey[2]+CodedKey[3])%2);
+   CheckSum2 = int((CodedKey[4]+CodedKey[5]+CodedKey[6]+CodedKey[7])%2);
+   CheckSum3 = int((CodedKey[8]+CodedKey[9]+CodedKey[10]+CodedKey[11])%2);
+   
+  for (i=0;i<=len;i++)
+    {
+     if(i>=0 && i<=3)
+     {
+      if(CheckSum2)
+        CodedKeyFinal[3-i] = CodedKey[i];
+      else
+        CodedKeyFinal[i] = CodedKey[i];  
+     }
+    
+    if(i>=4 && i<=7)
+     {
+      if(CheckSum3)
+        CodedKeyFinal[12-i] = CodedKey[i];
+      else
+        CodedKeyFinal[i+1] = CodedKey[i];
+     }
+    
+    if(i>=8 && i<=11)
+     {
+      if(CheckSum1)
+        CodedKeyFinal[21-i] = CodedKey[i];
+      else
+        CodedKeyFinal[i+2] = CodedKey[i];
+     } 
+    
+    } 
+   
+   CodedKeyFinal[4] = '-';
+   CodedKeyFinal[9] = '-';
+  if (EnteredKey == CodedKeyFinal) result = ON;
+  else result = OFF;
+  
+  return(result);
+ }
+
+/*------------------------------------------------------------------------- 
+--  Procedure Name    : iQ_PT_Access
+--  Created by        : Steve Santerre
+--  Last modified on  : 2017/03
+--  
+--  Purpose           : This function is called to Verify If Login password
+--                      corresponds to the coded formula
+--   
+--  HH VD3 MT VD2 MU VD1
+--  HH = Hour
+--  VD3 = Version digits #3
+--  MT = Tens of Minutes
+--  VD2 = Version digits #2
+--  MU = Units of Minutes
+--  VD1 = Version digits #1                
+--------------------------------------------------------------------------*/
+ 
+int iQ_PT_Access (void)
+{
+string Version[3][10];
+int VersionDigit[3];
+string PwdPT[6][2];
+
+split(Version,TX_PT_CONTROL_SW_VERS,'.');
+VersionDigit[0] = int(Version[0]);
+VersionDigit[1] = int(Version[1]);
+VersionDigit[2] = int(Version[2]);
+PwdPT[0] = adj(date[HH],2,0);
+PwdPT[1] = trim(adj(VersionDigit[2],2,0));
+PwdPT[2] = adj(date[MM]/10,1,0);
+PwdPT[3] = trim(adj(VersionDigit[1],2,0));
+PwdPT[4] = adj(date[MM]%10,1,0);
+PwdPT[5] = trim(adj(VersionDigit[0],2,0));
+
+return (int(concat(PwdPT[0],PwdPT[1],PwdPT[2],PwdPT[3],PwdPT[4],PwdPT[5])));
+} 
